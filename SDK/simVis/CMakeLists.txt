@@ -452,7 +452,7 @@ target_include_directories(simVis PUBLIC
     $<INSTALL_INTERFACE:include>
 )
 target_link_libraries(simVis PUBLIC simData simCore simNotify
-    ${OSG_ALL_LIBDEPENDENCIES} OSGEARTH)
+    ${OSG_ALL_LIBDEPENDENCIES} OSGEARTH X11)
 target_link_libraries(simVis PRIVATE VSI::GL)
 
 if(SQLITE3_FOUND)
