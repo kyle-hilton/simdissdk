@@ -136,7 +136,7 @@ int Viewer::run()
   // this is a hack fix I added because it was coring before
   // it ever got running on the examples. I assume this is a
   // threading problem, but haven't looked into it.
-  while (!scene.valid());
+  while (!scene_.valid());
 
   // do some final set up before running the frame loop.
   if (scene_.valid())
