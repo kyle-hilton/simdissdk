@@ -1,0 +1,14 @@
+{
+  "build": { "dockerfile": "Dockerfile" },
+  "runArgs": ["--network=host"],
+  "extensions": [
+      "ms-vscode.cmake-tools",
+      "ms-python.python",
+      "ms-vscode-remote.remote-ssh",
+      "ms-vscode.cpptools",
+      "ms-vscode.cpptools-themes",
+      "ms-vscode.cpptools-extension-pack",
+      "ms-vscode.cmake-tools"
+  ],
+  "mounts": [ "source=C:/Windows.old/Windows/Fonts,target=/fonts,type=bind,consistency=cached" ]
+}
