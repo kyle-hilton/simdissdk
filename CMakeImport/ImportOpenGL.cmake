@@ -1,6 +1,6 @@
 # Use the Legacy OpenGL preference instead of GLVND
 set(OpenGL_GL_PREFERENCE LEGACY)
-find_package(OpenGL)
+find_package(OpenGL REQUIRED)
 
 if(OPENGL_FOUND)
     add_library(VSI::GL UNKNOWN IMPORTED)

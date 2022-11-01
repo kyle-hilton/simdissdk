@@ -373,6 +373,9 @@ if(OSGEARTH_SILVERLINING_SUPPORT STREQUAL NODEKIT)
     set(HAVE_SILVERLINING_NODEKIT 1)
 endif()
 
+message(STATUS "Has Silverlining Support: ${OSGEARTH_SILVERLINING_SUPPORT}")
+message(STATUS "Has Triton Support: ${OSGEARTH_TRITON_SUPPORT}")
+
 # Detect the rename of osgEarth/ThreadingUtils to osgEarth/Threading
 if(EXISTS "${OSGEARTH_LIBRARY_INCLUDE_PATH}/osgEarth/Threading")
     set(HAVE_OSGEARTH_THREADING 1)

@@ -18,6 +18,7 @@ set(${LIBRARYNAME}_INSTALL_COMPONENT ThirdPartyLibs)
 initialize_ENV(OSG_DIR)
 initialize_ENV(OSGQT_DIR)
 set(INCLUDE_DIRS
+    "/usr/include"
     ${OSGQT_DIR}/include
     $ENV{OSGQT_DIR}/include
     ${THIRD_DIR}/osgQt/${${LIBRARYNAME}_VERSION}/include
@@ -27,6 +28,7 @@ set(INCLUDE_DIRS
 )
 
 set(LIB_DIRS
+    "/usr/lib64"
     ${OSGQT_DIR}
     $ENV{OSGQT_DIR}
     ${THIRD_DIR}/osgQt/${${LIBRARYNAME}_VERSION}

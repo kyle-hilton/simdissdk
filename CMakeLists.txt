@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.22)
 
 # Disable in-source builds and avoid writing to source directories directly
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
@@ -23,7 +23,7 @@ elseif(ENABLE_UNIT_TESTING)
 endif()
 
 # Be rather quiet by default
-option(VERBOSE "Toggles the displaying of details" OFF)
+option(VERBOSE "Toggles the displaying of details" ON)
 # Install headers by default
 option(INSTALL_HEADERS "Install the SDK headers when performing a make install" ON)
 # Install 3rd party libraries by default
@@ -53,6 +53,7 @@ set(INSTALL_SIMDIS_SDK_LIBRARIES ON)
 if(NOT MSVC AND NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." FORCE)
 endif()
+set(CMAKE_BUILD_TYPE "Release")
 
 # Allow CMake to use folders in MSVC; turn off when using Express versions
 option(ENABLE_FOLDERS "Enable folder grouping of projects in IDEs." ON)
@@ -231,7 +232,7 @@ endif()
 
 # SWIG module requires Python3.  FindPython3.cmake is first distributed in CMake 3.12
 if(NOT CMAKE_VERSION VERSION_LESS "3.12")
-    option(BUILD_SDK_SWIG "Build SIMDIS SDK SWIG module" OFF)
+    option(BUILD_SDK_SWIG "Build SIMDIS SDK SWIG module" ON)
     if(BUILD_SDK_SWIG)
         # Include SWIG for Python simCore module
         include(ImportSWIG)

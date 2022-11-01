@@ -1,0 +1,55 @@
+FROM centos:7
+RUN yum update -y
+RUN yum install wget \
+                bzip2 \
+                unzip \
+                doxygen \
+                valgrind \
+                gdb \
+                git \
+                # simdissdk deps
+                python3-devel \
+                freeglut-devel \
+                libXinerama \
+                libXrandr \
+                libGLU \
+                qt5-qtbase-devel \
+                qt5-qttools-devel \
+                mesa-dri-drivers \
+                swig \
+                sqlite-devel \
+                -y
+
+RUN yum install centos-release-scl -y
+RUN yum install devtoolset-8-gcc \
+                devtoolset-8-gcc-c++ \
+                make \
+                -y
+
+RUN scl enable devtoolset-8 -- bash
+ENV CXX="/opt/rh/devtoolset-8/root/bin/g++"
+ENV CC="/opt/rh/devtoolset-8/root/bin/gcc"
+
+# get the latest cmake
+RUN cd /
+RUN wget https://github.com/Kitware/CMake/releases/download/v3.24.2/cmake-3.24.2-linux-x86_64.tar.gz
+RUN tar -zxf /cmake-3.24.2-linux-x86_64.tar.gz
+ENV cmake="/cmake-3.24.2-linux-x86_64/bin/cmake"
+
+ENV SIMDIS_SDK_FILE_PATH="/usr/local"
+ENV SIMDIS_FONTPATH="/fonts"
+
+# get the data needed
+RUN wget https://github.com/USNavalResearchLaboratory/simdissdk/releases/download/simdissdk-1.17/SIMDIS_SDK-Data.zip
+RUN unzip SIMDIS_SDK-Data.zip -d /usr/local/share
+RUN chmod +777 /usr/local/share/SIMDIS_SDK-Data/*
+
+# RUN wget https://github.com/USNavalResearchLaboratory/simdissdk/releases/download/simdissdk-1.17/SIMDIS_SDK_BIN_linux64_gcc-8.3.tbz2
+# RUN bzip2 -d SIMDIS_SDK_BIN_linux64_gcc-8.3.tbz2
+# RUN tar -vxf SIMDIS_SDK_BIN_linux64_gcc-8.3.tar
+# RUN chmod +777 SIMDIS_SDK/*
+
+# get the 3rd party libs from the latest release
+RUN wget https://github.com/USNavalResearchLaboratory/simdissdk/releases/download/simdissdk-1.17/SIMDIS_SDK_3rd_linux64_gcc-8.3.tbz2
+RUN bzip2 -d SIMDIS_SDK_3rd_linux64_gcc-8.3.tbz2
+RUN tar -xvf SIMDIS_SDK_3rd_linux64_gcc-8.3.tar

@@ -1,14 +1,15 @@
 {
-  "build": { "dockerfile": "Dockerfile" },
-  "runArgs": ["--network=host"],
+  "build": { "dockerfile": "Dockerfile_Fedora36" },
+  "runArgs": ["--network=host",
+              "--gpus",
+              "all"],
   "extensions": [
-      "ms-vscode.cmake-tools",
+      // "ms-vscode.cmake-tools",
       "ms-python.python",
       "ms-vscode-remote.remote-ssh",
       "ms-vscode.cpptools",
       "ms-vscode.cpptools-themes",
-      "ms-vscode.cpptools-extension-pack",
-      "ms-vscode.cmake-tools"
+      "ms-vscode.cpptools-extension-pack"
   ],
-  "mounts": [ "source=C:/Windows.old/Windows/Fonts,target=/fonts,type=bind,consistency=cached" ]
+  "mounts": [ "source=C:/Windows.old/Windows/Fonts,target=/fonts,type=bind,consistency=cached"]
 }

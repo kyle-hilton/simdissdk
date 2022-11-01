@@ -5,6 +5,7 @@ set(SWIG_VERSION 4.0.2)
 find_program(SWIG_EXECUTABLE
     NAMES swig
     HINTS
+        "/usr/bin"
         $ENV{SWIG_DIR}/..
         $ENV{SWIG_DIR}/bin
         $ENV{SWIG_DIR}

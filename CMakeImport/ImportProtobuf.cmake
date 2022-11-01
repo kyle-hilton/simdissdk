@@ -6,24 +6,29 @@ set(PROTOBUF_SUBDIR 3.14.0)
 # Setup search paths
 initialize_ENV(PROTOBUF_DIR)
 set(INCLUDE_DIRS 
+    "/usr/include/"
     $ENV{PROTOBUF_DIR}/include
     ${THIRD_DIR}/protobuf/${PROTOBUF_SUBDIR}/include
     ${THIRD_DIR}/protobuf-${PROTOBUF_SUBDIR}/include
 )
 
 set(LIB_DIRS 
+    "/usr/lib64"
     $ENV{PROTOBUF_DIR}/lib
     ${THIRD_DIR}/protobuf/${PROTOBUF_SUBDIR}/lib
     ${THIRD_DIR}/protobuf-${PROTOBUF_SUBDIR}/lib
 )
 
 set(BIN_DIRS 
+    "/usr/bin"
     $ENV{PROTOBUF_DIR}/bin
     ${THIRD_DIR}/protobuf/${PROTOBUF_SUBDIR}/bin
     ${THIRD_DIR}/protobuf-${PROTOBUF_SUBDIR}/bin
 )
 
 find_path(PROTOBUF_LIBRARY_INCLUDE_PATH NAME google/protobuf/descriptor.h PATHS ${INCLUDE_DIRS} NO_DEFAULT_PATH)
+message(STATUS "Found Protobuf: ${PROTOBUF_LIBRARY_INCLUDE_PATH}")
+
 find_library(PROTOBUF_LIBRARY_DEBUG_NAME
     NAMES protobuf_d libprotobuf_d protobufd libprotobufd
     HINTS ${LIB_DIRS}
@@ -34,6 +39,8 @@ find_library(PROTOBUF_LIBRARY_RELEASE_NAME
     PATHS ${LIB_DIRS}
     NO_DEFAULT_PATH
 )
+message(STATUS "Found Protobuf: ${PROTOBUF_LIBRARY_RELEASE_NAME}")
+find_package(Protobuf REQUIRED)
 
 # Determine whether we found the library correctly
 if(NOT PROTOBUF_LIBRARY_RELEASE_NAME)

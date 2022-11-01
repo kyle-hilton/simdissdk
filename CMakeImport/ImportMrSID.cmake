@@ -19,6 +19,10 @@ initialize_ENV(MRSID_DIR)
 initialize_ENV(MRSID_RASTER_DIR)
 initialize_ENV(MRSID_LIDAR_DIR)
 
+set(MRSID_DIR "/SIMDIS_SDK/3rd/linux64_gcc-8.3/MrSID_DSDK/9.5.4.4709/")
+set(MRSID_RASTER_DIR "/SIMDIS_SDK/3rd/linux64_gcc-8.3/MrSID_DSDK/9.5.4.4709/Raster_DSDK/")
+set(MRSID_LIDAR_DIR "/SIMDIS_SDK/3rd/linux64_gcc-8.3/MrSID_DSDK/9.5.4.4709/Lidar_DSDK/")
+
 # Find the root for MrSID (Raster)
 find_path(MRSID_RASTER_DIR
     NAMES include/MrSIDImageReader.h lib/libltidsdk.so lib/lti_dsdk_9.5.dll

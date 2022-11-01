@@ -1,0 +1,54 @@
+FROM fedora:latest
+
+RUN yum update -y
+RUN yum install wget \
+                bzip2 \
+                unzip \
+                gcc \
+                g++ \
+                gdb \
+                git \
+                cmake \
+                valgrind-devel \
+                # simdissdk specific
+                mesa-libGL-devel \
+                swig \
+                doxygen \
+                gdal-devel \
+                glew-devel \
+                python3-devel \
+                protobuf-devel \
+                libXinerama-devel \
+                libXrandr-devel \
+                libGLU-devel \
+                qt5-qtbase-devel \
+                qt5-qttools-devel \
+                osgearth-devel \
+                OpenSceneGraph-devel \
+                sqlite-devel \
+                -y
+
+# extra crap to figure out the display
+RUN yum install net-tools \
+                xeyes \
+                nmap \
+                -y
+
+ENV CXX="/usr/bin/g++"
+ENV SIMDIS_SDK_FILE_PATH="/usr/local/share/SIMDIS_SDK-Data/"
+ENV SIMDIS_FONTPATH="/fonts"
+
+# get the data needed
+RUN wget https://github.com/USNavalResearchLaboratory/simdissdk/releases/download/simdissdk-1.17/SIMDIS_SDK-Data.zip
+RUN unzip SIMDIS_SDK-Data.zip -d /usr/local/share
+RUN chmod +777 /usr/local/share/SIMDIS_SDK-Data/*
+
+# RUN wget https://github.com/USNavalResearchLaboratory/simdissdk/releases/download/simdissdk-1.17/SIMDIS_SDK_BIN_linux64_gcc-8.3.tbz2
+# RUN bzip2 -d SIMDIS_SDK_BIN_linux64_gcc-8.3.tbz2
+# RUN tar -vxf SIMDIS_SDK_BIN_linux64_gcc-8.3.tar
+# RUN chmod +777 SIMDIS_SDK/*
+
+# get the 3rd party libs from the latest release
+RUN wget https://github.com/USNavalResearchLaboratory/simdissdk/releases/download/simdissdk-1.17/SIMDIS_SDK_3rd_linux64_gcc-8.3.tbz2
+RUN bzip2 -d SIMDIS_SDK_3rd_linux64_gcc-8.3.tbz2
+RUN tar -xf SIMDIS_SDK_3rd_linux64_gcc-8.3.tar

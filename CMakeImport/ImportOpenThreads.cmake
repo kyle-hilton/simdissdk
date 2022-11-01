@@ -18,6 +18,7 @@ endif()
 initialize_ENV(OSG_DIR)
 initialize_ENV(OPENTHREADS_DIR)
 set(INCLUDE_DIRS 
+    "/usr/include"
     $ENV{OPENTHREADS_DIR}/include
     ${OSG_DIR}
     $ENV{OSG_DIR}/include
@@ -25,6 +26,7 @@ set(INCLUDE_DIRS
 )
 
 set(LIB_DIRS 
+    "/usr/lib64"
     $ENV{OPENTHREADS_DIR}/lib
     $ENV{OPENTHREADS_DIR}/lib64
     ${OSG_DIR}/lib
@@ -39,6 +41,10 @@ set(LIB_DIRS
 find_path(${LIBRARYNAME}_LIBRARY_INCLUDE_PATH NAME OpenThreads/Version PATHS ${INCLUDE_DIRS} NO_DEFAULT_PATH)
 find_library(${LIBRARYNAME}_LIBRARY_DEBUG_NAME NAMES OpenThreadsd PATHS ${LIB_DIRS} NO_DEFAULT_PATH)
 find_library(${LIBRARYNAME}_LIBRARY_RELEASE_NAME NAMES OpenThreads PATHS ${LIB_DIRS} NO_DEFAULT_PATH)
+
+message(STATUS "Found OpenThreads INC: ${${LIBRARYNAME}_LIBRARY_INCLUDE_PATH}")
+message(STATUS "Found OpenThreads DBG: ${${LIBRARYNAME}_LIBRARY_DEBUG_NAME}")
+message(STATUS "Found OpenThreads REL: ${${LIBRARYNAME}_LIBRARY_RELEASE_NAME}")
 
 ############################################################
 ########## Imported 3rd party library boilerplate ##########

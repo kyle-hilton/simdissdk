@@ -5,11 +5,13 @@
 set(GLEW_VERSION 2.1.0)
 initialize_ENV(GLEW_DIR)
 set(INCLUDE_DIRS 
+    "/usr/include"
     $ENV{GLEW_DIR}/include
     ${THIRD_DIR}/GLEW/${GLEW_VERSION}/include
 )
 
 set(LIB_DIRS 
+    "/usr/lib64"
     $ENV{GLEW_DIR}/lib
     ${THIRD_DIR}/GLEW/${GLEW_VERSION}/lib
 )
