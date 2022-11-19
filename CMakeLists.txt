@@ -27,7 +27,7 @@ option(VERBOSE "Toggles the displaying of details" ON)
 # Install headers by default
 option(INSTALL_HEADERS "Install the SDK headers when performing a make install" ON)
 # Install 3rd party libraries by default
-option(INSTALL_THIRDPARTY_LIBRARIES "Install 3rd party libraries (OSG/osgEarth/Qt) on make install" ON)
+option(INSTALL_THIRDPARTY_LIBRARIES "Install 3rd party libraries (OSG/osgEarth/Qt) on make install" OFF)
 
 # The ENABLE_DEPRECATED_API option is used to include in API which is being phased out.
 # If you can compile your applications with this turned off you are
