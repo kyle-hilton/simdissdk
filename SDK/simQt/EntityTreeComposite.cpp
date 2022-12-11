@@ -37,6 +37,7 @@
 #include "simQt/ResourceInitializer.h"
 #include "simQt/ScopedSignalBlocker.h"
 #include "simQt/SettingsGroup.h"
+#include "simQt/WidgetSettings.h"
 #include "ui_EntityTreeComposite.h"
 
 namespace simQt {
@@ -48,6 +49,10 @@ FilterDialog::FilterDialog(SettingsPtr settings, QWidget* parent)
   :QDialog(parent),
    settings_(settings)
 {
+  setObjectName("Entity Tree Composite Filter Dialog");
+  // Since the object saves its own geometry, skip having the Widget Setting save the geometry
+  setProperty(DO_NOT_SAVE_GEOMETRY, true);
+
   // restore geometry if settings is valid
   if (settings_)
   {
@@ -67,7 +72,7 @@ FilterDialog::~FilterDialog()
 void FilterDialog::closeEvent(QCloseEvent* ev)
 {
   QDialog::closeEvent(ev);
-  emit(closedGui());
+  Q_EMIT(closedGui());
 }
 
 
@@ -328,7 +333,7 @@ void EntityTreeComposite::makeAndDisplayMenu_(const QPoint& pos)
   }
 
   // Give outside code a chance to update the menu before showing the menu
-  emit rightClickMenuRequested(menu);
+  Q_EMIT rightClickMenuRequested(menu);
 
   // Show the menu with exec(), making sure the position is correctly relative
   menu->exec(composite_->treeView->viewport()->mapToGlobal(pos));
@@ -735,9 +740,9 @@ void EntityTreeComposite::copySelection_()
 void EntityTreeComposite::centerOnSelection_()
 {
   if (selectedItems().size() == 1)
-    emit centerOnEntityRequested(selectedItems().front());
+    Q_EMIT centerOnEntityRequested(selectedItems().front());
   else if (!selectedItems().empty())
-    emit centerOnSelectionRequested(selectedItems());
+    Q_EMIT centerOnSelectionRequested(selectedItems());
 }
 
 void EntityTreeComposite::setTreeView_(bool useTreeView)
@@ -752,7 +757,7 @@ void EntityTreeComposite::setTreeView_(bool useTreeView)
   toggleTreeViewAction_->setChecked(useTreeView);
   updateActionEnables_();
 
-  emit treeViewChanged(useTreeView);
+  Q_EMIT treeViewChanged(useTreeView);
 }
 
 void EntityTreeComposite::updateActionEnables_()
