@@ -2,7 +2,7 @@
 
 project(SIMDIS_SDK_Examples)
 
-add_subdirectory(imgui)
+# add_subdirectory(imgui) # still having trouble with compiling
 
 add_subdirectory(AnimatedLine)
 add_subdirectory(AntennaPattern)
