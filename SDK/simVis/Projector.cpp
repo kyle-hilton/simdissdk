@@ -148,8 +148,8 @@ static const float DEFAULT_ALPHA_VALUE = 0.1f;
     //! -1 on error.
     int add(simVis::ProjectorNode* node)
     {
-      OE_SOFT_ASSERT_AND_RETURN(node != nullptr, -1);
-      OE_SOFT_ASSERT_AND_RETURN(projectors_.size() < SIM_MAX_NODE_PROJECTORS, -1);
+      // OE_SOFT_ASSERT_AND_RETURN(node != nullptr, -1);
+      // OE_SOFT_ASSERT_AND_RETURN(projectors_.size() < SIM_MAX_NODE_PROJECTORS, -1);
 
       prune();
 

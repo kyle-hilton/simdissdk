@@ -18,10 +18,12 @@ endif()
 # Setup search paths
 initialize_ENV(${LIBRARYNAME}_DIR)
 set(INCLUDE_DIRS
+    "/usr/include"
     $ENV{${LIBRARYNAME}_DIR}/include
     ${THIRD_DIR}/osgEarth/${VSI_OSGEARTH_VERSION}/include
 )
 set(LIB_DIRS
+    "/usr/lib64"
     $ENV{${LIBRARYNAME}_DIR}
     ${THIRD_DIR}/osgEarth/${VSI_OSGEARTH_VERSION}
 )
@@ -30,6 +32,10 @@ set(LIB_DIRS
 find_path(${LIBRARYNAME}_LIBRARY_INCLUDE_PATH NAME osgEarth/Version PATHS ${INCLUDE_DIRS} NO_DEFAULT_PATH)
 find_library(${LIBRARYNAME}_LIBRARY_DEBUG_NAME NAMES osgEarthd PATHS ${LIB_DIRS} PATH_SUFFIXES lib lib64 NO_DEFAULT_PATH)
 find_library(${LIBRARYNAME}_LIBRARY_RELEASE_NAME NAMES osgEarth PATHS ${LIB_DIRS} PATH_SUFFIXES lib lib64 NO_DEFAULT_PATH)
+message(STATUS "Found OsgEarth INC: ${${LIBRARYNAME}_LIBRARY_INCLUDE_PATH}")
+message(STATUS "Found OsgEarth DBG: ${${LIBRARYNAME}_LIBRARY_DEBUG_NAME}")
+message(STATUS "Found OsgEarth REL: ${${LIBRARYNAME}_LIBRARY_RELEASE_NAME}")
+
 
 if(NOT ${LIBRARYNAME}_LIBRARY_RELEASE_NAME)
     mark_as_advanced(CLEAR ${LIBRARYNAME}_LIBRARY_INCLUDE_PATH ${LIBRARYNAME}_LIBRARY_DEBUG_NAME ${LIBRARYNAME}_LIBRARY_RELEASE_NAME)
@@ -125,6 +131,7 @@ set(OS_PLUGIN_SUBDIR "${OS_PLUGIN_SUBDIR}/osgPlugins-${OSG_VERSION}")
 
 # Install osgEarth plugins
 set(PLUGIN_DIRS
+    "/usr/lib64/osgPlugins-3.6.5"
     $ENV{OSGEARTH_DIR}
     ${THIRD_DIR}/osgEarth/${VSI_OSGEARTH_VERSION}
 )
@@ -141,11 +148,12 @@ find_path(OSGEARTH_PLUGIN_PATH
 )
 find_path(OSGEARTH_PLUGIN_PATH NAMES osgdb_earth.dll osgdb_earth.so PATHS ${PLUGIN_DIRS} NO_DEFAULT_PATH)
 
+message(STATUS "Found OsgEarth Plugin LIB: ${OSGEARTH_PLUGIN_PATH}")
 if(OSGEARTH_PLUGIN_PATH)
     mark_as_advanced(FORCE OSGEARTH_PLUGIN_PATH)
 else()
     mark_as_advanced(CLEAR OSGEARTH_PLUGIN_PATH)
-    message(WARNING "osgEarth Plug-in Path not found.  Will result in improper installation.")
+    message(WARNING "osgEarth Plug-in Path not found. Will result in improper installation.")
 endif()
 
 # Put the plugin location in the library list for 32 to 64 but Linux conversion

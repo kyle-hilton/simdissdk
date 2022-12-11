@@ -26,7 +26,11 @@
 #include <QIcon>
 #include "osgEarth/Map"
 #include "simCore/Calc/Math.h"
+
+#ifdef HAVE_SIMUTIL
 #include "simUtil/VelocityParticleLayer.h"
+#endif
+
 #include "simQt/MapDataModel.h"
 
 namespace simQt {
@@ -72,10 +76,12 @@ void MapReindexer::getLayers(osgEarth::Map* map, osgEarth::ImageLayerVector& ima
   if (map != nullptr)
   {
     map->getLayers(imageLayers);
+#ifdef HAVE_SIMUTIL
     // Remove Velocity Particle layers
     imageLayers.erase(std::remove_if(imageLayers.begin(), imageLayers.end(), [](const osg::ref_ptr<osgEarth::ImageLayer>& imgLayer) {
       return dynamic_cast<const simUtil::VelocityParticleLayer*>(imgLayer.get()) != nullptr;
     }), imageLayers.end());
+#endif
   }
 }
 
@@ -93,8 +99,10 @@ void MapReindexer::getLayers(osgEarth::Map* map, FeatureModelLayerVector& modelL
 
 void MapReindexer::getLayers(osgEarth::Map* map, VelocityParticleLayerVector& velocityLayers)
 {
+#ifdef HAVE_SIMUTIL
   if (map != nullptr)
     map->getLayers(velocityLayers);
+#endif
 }
 
 void MapReindexer::getOtherLayers(osgEarth::Map* map, osgEarth::VisibleLayerVector& otherLayers)
@@ -153,6 +161,9 @@ unsigned int MapReindexer::layerTypeIndex(osgEarth::FeatureModelLayer* layer) co
 
 unsigned int MapReindexer::layerTypeIndex(simUtil::VelocityParticleLayer* layer) const
 {
+#ifndef HAVE_SIMUTIL
+  return INVALID_INDEX;
+#else
   // Must have a valid map
   assert(map_.valid());
   if (!map_.valid())
@@ -160,6 +171,7 @@ unsigned int MapReindexer::layerTypeIndex(simUtil::VelocityParticleLayer* layer)
   VelocityParticleLayerVector layers;
   MapReindexer::getLayers(map_.get(), layers);
   return indexOf(layers, layer);
+#endif
 }
 
 unsigned int MapReindexer::otherLayerTypeIndex(osgEarth::VisibleLayer* layer) const
@@ -590,6 +602,7 @@ private:
   osg::observer_ptr<osgEarth::FeatureModelLayer> layer_;
 };
 
+#if HAVE_SIMUTIL
 /// A Velocity Particle layer
 class VelocityParticleLayerItem : public LayerItem
 {
@@ -627,6 +640,7 @@ public:
 private:
   osg::observer_ptr<simUtil::VelocityParticleLayer> layer_;
 };
+#endif
 
 /// Other layer
 class OtherLayerItem : public LayerItem
@@ -684,6 +698,7 @@ public:
   /* Layer Added */
   virtual void onLayerAdded(osgEarth::Layer* layer, unsigned int index)
   {
+#ifdef HAVE_SIMUTIL
     // Need to test Velocity Layer first since it is-a ImageLayer
     simUtil::VelocityParticleLayer* velocityLayer = dynamic_cast<simUtil::VelocityParticleLayer*>(layer);
     if (velocityLayer)
@@ -696,6 +711,7 @@ public:
         dataModel_.addVelocityLayer_(velocityLayer, newIndex);
       return;
     }
+#endif
 
     osgEarth::ImageLayer* imageLayer = dynamic_cast<osgEarth::ImageLayer*>(layer);
     if (imageLayer)
@@ -748,6 +764,7 @@ public:
 
   virtual void onLayerMoved(osgEarth::Layer* layer, unsigned int oldIndex, unsigned int newIndex)
   {
+#ifdef HAVE_SIMUTIL
     // Need to test Velocity Particle Layer first since it is-a ImageLayer
     simUtil::VelocityParticleLayer* velocityLayer = dynamic_cast<simUtil::VelocityParticleLayer*>(layer);
     if (velocityLayer)
@@ -755,6 +772,7 @@ public:
       moveLayer_(dataModel_.velocityGroup_(), layer, newIndex < oldIndex);
       return;
     }
+#endif
 
     osgEarth::ImageLayer* imageLayer = dynamic_cast<osgEarth::ImageLayer*>(layer);
     if (imageLayer)
@@ -788,6 +806,7 @@ public:
   /** Layer Removed */
   virtual void onLayerRemoved(osgEarth::Layer* layer, unsigned int index)
   {
+#ifdef HAVE_SIMUTIL
     // Need to test Velocity Particle Layer first since it is-a ImageLayer
     simUtil::VelocityParticleLayer* velocityLayer = dynamic_cast<simUtil::VelocityParticleLayer*>(layer);
     if (velocityLayer)
@@ -797,6 +816,7 @@ public:
       removeLayer_(dataModel_.velocityGroup_(), velocityLayer);
       return;
     }
+#endif
 
     osgEarth::ImageLayer* imageLayer = dynamic_cast<osgEarth::ImageLayer*>(layer);
     if (imageLayer)
@@ -905,22 +925,28 @@ public:
   virtual void onVisibleChanged(osgEarth::VisibleLayer *layer) override
   {
     osgEarth::ImageLayer* imageLayer = dynamic_cast<osgEarth::ImageLayer*>(layer);
+#ifdef HAVE_SIMUTIL
     simUtil::VelocityParticleLayer* velocityLayer = dynamic_cast<simUtil::VelocityParticleLayer*>(imageLayer);
     if (velocityLayer)
-      emit dataModel_.velocityLayerVisibleChanged(velocityLayer);
-    else if (imageLayer)
-      emit dataModel_.imageLayerVisibleChanged(imageLayer);
+      Q_EMIT dataModel_.velocityLayerVisibleChanged(velocityLayer);
+    else
+#endif
+      if (imageLayer)
+        Q_EMIT dataModel_.imageLayerVisibleChanged(imageLayer);
   }
 
   /** Inherited from VisibleLayerCallback */
   virtual void onOpacityChanged(osgEarth::VisibleLayer *layer) override
   {
     osgEarth::ImageLayer* imageLayer = dynamic_cast<osgEarth::ImageLayer*>(layer);
+#ifdef HAVE_SIMUTIL
     simUtil::VelocityParticleLayer* velocityLayer = dynamic_cast<simUtil::VelocityParticleLayer*>(imageLayer);
     if (velocityLayer)
-      emit dataModel_.velocityLayerOpacityChanged(velocityLayer);
-    else if (imageLayer)
-      emit dataModel_.imageLayerOpacityChanged(imageLayer);
+      Q_EMIT dataModel_.velocityLayerOpacityChanged(velocityLayer);
+    else
+#endif
+      if (imageLayer)
+        Q_EMIT dataModel_.imageLayerOpacityChanged(imageLayer);
   }
 
 private:
@@ -939,7 +965,7 @@ public:
   /** Inherited from VisibleLayerCallback */
   virtual void onVisibleChanged(osgEarth::VisibleLayer *layer) override
   {
-    emit dataModel_.elevationLayerVisibleChanged(static_cast<osgEarth::ElevationLayer*>(layer));
+    Q_EMIT dataModel_.elevationLayerVisibleChanged(static_cast<osgEarth::ElevationLayer*>(layer));
   }
 
 private:
@@ -961,7 +987,7 @@ public:
     osgEarth::FeatureModelLayer* modelLayer = dynamic_cast<osgEarth::FeatureModelLayer*>(layer);
     if (modelLayer)
     {
-      emit dataModel_.featureLayerVisibleChanged(modelLayer);
+      Q_EMIT dataModel_.featureLayerVisibleChanged(modelLayer);
     }
   }
 
@@ -971,7 +997,7 @@ public:
     osgEarth::FeatureModelLayer* modelLayer = dynamic_cast<osgEarth::FeatureModelLayer*>(layer);
     if (modelLayer)
     {
-      emit dataModel_.featureLayerOpacityChanged(modelLayer);
+      Q_EMIT dataModel_.featureLayerOpacityChanged(modelLayer);
     }
   }
 
@@ -991,13 +1017,13 @@ public:
   /** Inherited from VisibleLayerCallback */
   virtual void onVisibleChanged(osgEarth::VisibleLayer *layer) override
   {
-    emit dataModel_.otherLayerVisibleChanged(layer);
+    Q_EMIT dataModel_.otherLayerVisibleChanged(layer);
   }
 
   /** Inherited from VisibleLayerCallback */
   virtual void onOpacityChanged(osgEarth::VisibleLayer *layer) override
   {
-    emit dataModel_.otherLayerOpacityChanged(layer);
+    Q_EMIT dataModel_.otherLayerOpacityChanged(layer);
   }
 
 private:
@@ -1072,6 +1098,8 @@ void MapDataModel::removeAllCallbacks_(osgEarth::Map* map)
       tileLayer->removeCallback(imageCallbacks_.find(iter->get())->get());
     }
   }
+
+#ifdef HAVE_SIMUTIL
   // Need to also remove velocity layer callbacks from the image callbacks
   VelocityParticleLayerVector velocityLayers;
   MapReindexer::getLayers(map, velocityLayers);
@@ -1085,6 +1113,7 @@ void MapDataModel::removeAllCallbacks_(osgEarth::Map* map)
   }
   // Assertion failure means that we were out of sync with map; not a one-to-one with callback-to-layer
   assert(imageCallbacks_.size() == static_cast<int>(imageLayers.size() + velocityLayers.size()));
+#endif
 
   imageCallbacks_.clear();
 
@@ -1170,6 +1199,7 @@ void MapDataModel::fillModel_(osgEarth::Map *map)
     (*iter)->addCallback(cb.get());
   }
 
+#ifdef HAVE_SIMUTIL
   VelocityParticleLayerVector velocityLayers;
   MapReindexer::getLayers(map, velocityLayers);
   // need to reverse iterate, because we are inserting at row 0
@@ -1181,6 +1211,7 @@ void MapDataModel::fillModel_(osgEarth::Map *map)
     imageCallbacks_[iter->get()] = cb.get();
     static_cast<osgEarth::TileLayer*>(*iter)->addCallback(cb.get());
   }
+#endif
 
   osgEarth::VisibleLayerVector otherLayers;
   MapReindexer::getOtherLayers(map, otherLayers);
@@ -1241,7 +1272,7 @@ void MapDataModel::addImageLayer_(osgEarth::ImageLayer *layer, unsigned int inde
   osg::ref_ptr<osgEarth::TileLayerCallback> cb = new ImageLayerListener(*this);
   imageCallbacks_[layer] = cb.get();
   static_cast<osgEarth::TileLayer*>(layer)->addCallback(cb.get());
-  emit imageLayerAdded(layer);
+  Q_EMIT imageLayerAdded(layer);
 }
 
 void MapDataModel::addElevationLayer_(osgEarth::ElevationLayer *layer, unsigned int index)
@@ -1255,7 +1286,7 @@ void MapDataModel::addElevationLayer_(osgEarth::ElevationLayer *layer, unsigned 
   osg::ref_ptr<osgEarth::TileLayerCallback> cb = new ElevationLayerListener(*this);
   elevationCallbacks_[layer] = cb.get();
   static_cast<osgEarth::TileLayer*>(layer)->addCallback(cb.get());
-  emit elevationLayerAdded(layer);
+  Q_EMIT elevationLayerAdded(layer);
 }
 
 void MapDataModel::addFeatureLayer_(osgEarth::FeatureModelLayer *layer, unsigned int index)
@@ -1269,11 +1300,12 @@ void MapDataModel::addFeatureLayer_(osgEarth::FeatureModelLayer *layer, unsigned
   osg::ref_ptr<osgEarth::VisibleLayerCallback> cb = new FeatureModelLayerListener(*this);
   featureCallbacks_[layer] = cb.get();
   layer->addCallback(cb.get());
-  emit featureLayerAdded(layer);
+  Q_EMIT featureLayerAdded(layer);
 }
 
 void MapDataModel::addVelocityLayer_(simUtil::VelocityParticleLayer* layer, unsigned int index)
 {
+#ifdef HAVE_SIMUTIL
   const QModelIndex parentIndex = createIndex(rootItem_->rowOfChild(velocityGroup_()), 0, velocityGroup_());
   beginInsertRows(parentIndex, index, index);
   insertRow(index, parentIndex);
@@ -1283,7 +1315,8 @@ void MapDataModel::addVelocityLayer_(simUtil::VelocityParticleLayer* layer, unsi
   osg::ref_ptr<osgEarth::TileLayerCallback> cb = new ImageLayerListener(*this);
   imageCallbacks_[layer] = cb.get();
   static_cast<osgEarth::TileLayer*>(layer)->addCallback(cb.get());
-  emit velocityLayerAdded(layer);
+  Q_EMIT velocityLayerAdded(layer);
+#endif
 }
 
 void MapDataModel::addOtherLayer_(osgEarth::VisibleLayer *layer, unsigned int index)
@@ -1297,7 +1330,7 @@ void MapDataModel::addOtherLayer_(osgEarth::VisibleLayer *layer, unsigned int in
   osg::ref_ptr<osgEarth::VisibleLayerCallback> cb = new OtherLayerListener(*this);
   otherCallbacks_[layer] = cb.get();
   layer->addCallback(cb.get());
-  emit otherLayerAdded(layer);
+  Q_EMIT otherLayerAdded(layer);
 }
 
 MapDataModel::Item* MapDataModel::itemAt_(const QModelIndex &index) const
@@ -1451,7 +1484,7 @@ void MapDataModel::refreshText()
       const QModelIndex childItem = index(childType, 0, mapItem);
       // Assertion failure means the tree structure changed and this wasn't updated
       assert(childItem.isValid());
-      emit dataChanged(index(0, 0, childItem), index(group->rowCount() - 1, 0, childItem));
+      Q_EMIT dataChanged(index(0, 0, childItem), index(group->rowCount() - 1, 0, childItem));
     }
   };
 
@@ -1470,11 +1503,15 @@ QModelIndex MapDataModel::layerIndex(const osgEarth::Layer* layer) const
   // Find the appropriate group item based on the item type
   GroupItem* group = nullptr;
   QModelIndex parentIndex;
+
+#ifdef HAVE_SIMUTIL
   // Order matters because VelocityParticleLayer is-a ImageLayer
   if (dynamic_cast<const simUtil::VelocityParticleLayer*>(layer))
     group = static_cast<GroupItem*>(velocityGroup_());
-  else if (dynamic_cast<const osgEarth::ImageLayer*>(layer))
-    group = static_cast<GroupItem*>(imageGroup_());
+  else
+#endif
+     if (dynamic_cast<const osgEarth::ImageLayer*>(layer))
+      group = static_cast<GroupItem*>(imageGroup_());
   else if (dynamic_cast<const osgEarth::ElevationLayer*>(layer))
     group = static_cast<GroupItem*>(elevationGroup_());
   else if (dynamic_cast<const osgEarth::FeatureModelLayer*>(layer))

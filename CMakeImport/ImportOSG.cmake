@@ -18,6 +18,7 @@ set(OPENSCENEGRAPH_VERSION ${OSG_VERSION})
 
 initialize_ENV(OSG_DIR)
 set(INCLUDE_DIRS
+    "/usr/include"
     ${OSG_DIR}/include
     $ENV{OSG_DIR}/include
     ${THIRD_DIR}/OpenSceneGraph-${OSG_VERSION}/include
@@ -25,6 +26,7 @@ set(INCLUDE_DIRS
 )
 
 set(LIB_DIRS
+    "/usr/lib64"
     ${OSG_DIR}
     $ENV{OSG_DIR}
     ${THIRD_DIR}/OpenSceneGraph-${OSG_VERSION}
@@ -35,6 +37,9 @@ set(LIB_DIRS
 find_path(${LIBRARYNAME}_LIBRARY_INCLUDE_PATH NAME osg/Version PATHS ${INCLUDE_DIRS} NO_DEFAULT_PATH)
 find_library(${LIBRARYNAME}_LIBRARY_DEBUG_NAME NAMES osgd PATHS ${LIB_DIRS} PATH_SUFFIXES lib lib64 NO_DEFAULT_PATH)
 find_library(${LIBRARYNAME}_LIBRARY_RELEASE_NAME NAMES osg PATHS ${LIB_DIRS} PATH_SUFFIXES lib lib64 NO_DEFAULT_PATH)
+message(STATUS "Found OSG LIB: ${${LIBRARYNAME}_LIBRARY_INCLUDE_PATH}")
+message(STATUS "Found OSG DEB: ${${LIBRARYNAME}_LIBRARY_DEBUG_NAME}")
+message(STATUS "Found OSG REL: ${${LIBRARYNAME}_LIBRARY_RELEASE_NAME}")
 
 # osg_add_filename_prefix(<VAR> <FILENAME> <PREFIX>)
 #
@@ -148,6 +153,7 @@ function(import_osg_library LIBRARYNAME NAME)
 
     # Determine whether we found the library correctly
     if(NOT ${LIBRARYNAME}_LIBRARY_RELEASE_NAME)
+        message(STATUS "Failed to find: ${${LIBRARYNAME}_LIBRARY_RELEASE_NAME}")
         set(${LIBRARYNAME}_FOUND FALSE PARENT_SCOPE)
         mark_as_advanced(CLEAR ${LIBRARYNAME}_LIBRARY_DEBUG_NAME ${LIBRARYNAME}_LIBRARY_RELEASE_NAME)
         return()
@@ -175,7 +181,7 @@ function(import_osg_library LIBRARYNAME NAME)
         vsi_install_target(${LIBRARYNAME} ${OSG_INSTALL_COMPONENT})
     endif()
 
-endfunction()
+    endfunction()
 
 ############################################################
 # Import each of the OSG helper libraries
@@ -208,6 +214,7 @@ endif()
 
 # Install OSG plugins
 set(PLUGIN_DIRS
+    "/usr/lib64"
     ${_OSG_LIB_DIR}
     $ENV{OSG_DIR}
     ${THIRD_DIR}/OpenSceneGraph-${OSG_VERSION}
@@ -226,6 +233,7 @@ find_path(OSG_PLUGIN_PATH
         lib64/osgPlugins-${OSG_VERSION}
     NO_DEFAULT_PATH
 )
+message(STATUS "Found OSG-Plugins: ${OSG_PLUGIN_PATH}")
 
 # Put the plugin location in the library list for 32 to 64 but Linux conversion
 # so it is properly updated when a 32/64 bit configuration change is made

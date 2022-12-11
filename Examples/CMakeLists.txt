@@ -2,7 +2,7 @@
 
 project(SIMDIS_SDK_Examples)
 
-add_subdirectory(imgui)
+# add_subdirectory(imgui) # still having trouble with compiling
 
 add_subdirectory(AnimatedLine)
 add_subdirectory(AntennaPattern)
@@ -20,7 +20,7 @@ add_subdirectory(ImageIcons)
 add_subdirectory(MapScale)
 add_subdirectory(MassiveData)
 add_subdirectory(ObserverMaker)
-add_subdirectory(Ocean)
+# add_subdirectory(Ocean)
 add_subdirectory(Periscope)
 add_subdirectory(Picking)
 add_subdirectory(PlatformSymbology)
@@ -66,7 +66,7 @@ add_subdirectory(BeamTest)
 add_subdirectory(GateTest)
 add_subdirectory(EciTrackHistoryTest)
 add_subdirectory(LocatorTest)
-add_subdirectory(PlanetariumViewTest)
+# add_subdirectory(PlanetariumViewTest)
 add_subdirectory(PlatformAzimElevViewTest)
 add_subdirectory(LOBTest)
 add_subdirectory(TrackHistoryTest)

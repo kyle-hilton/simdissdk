@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.22)
 
 # Disable in-source builds and avoid writing to source directories directly
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
@@ -23,11 +23,11 @@ elseif(ENABLE_UNIT_TESTING)
 endif()
 
 # Be rather quiet by default
-option(VERBOSE "Toggles the displaying of details" OFF)
+option(VERBOSE "Toggles the displaying of details" ON)
 # Install headers by default
 option(INSTALL_HEADERS "Install the SDK headers when performing a make install" ON)
 # Install 3rd party libraries by default
-option(INSTALL_THIRDPARTY_LIBRARIES "Install 3rd party libraries (OSG/osgEarth/Qt) on make install" ON)
+option(INSTALL_THIRDPARTY_LIBRARIES "Install 3rd party libraries (OSG/osgEarth/Qt) on make install" OFF)
 
 # The ENABLE_DEPRECATED_API option is used to include in API which is being phased out.
 # If you can compile your applications with this turned off you are
@@ -42,9 +42,13 @@ endif()
 # Static build for libraries?
 option(SIMNOTIFY_SHARED "If off, simNotify SDK libraries are built statically; if on, simNotify SDK libraries are built dynamically" ON)
 option(SIMCORE_SHARED "If off, simCore SDK libraries are built statically; if on, simCore SDK libraries are built dynamically" ON)
+option(BUILD_SIMDATA "If off, simData SDK libraries are not compiled; if on, library is built if dependencies are satisfied." ON)
 option(SIMDATA_SHARED "If off, simData SDK libraries are built statically; if on, simData SDK libraries are built dynamically" ON)
+option(BUILD_SIMVIS "If off, simVis SDK libraries are not compiled; if on, library is built if dependencies are satisfied." ON)
 option(SIMVIS_SHARED "If off, simVis SDK libraries are built statically; if on, simVis SDK libraries are built dynamically" ON)
+option(BUILD_SIMUTIL "If off, simUtil SDK libraries are not compiled; if on, library is built if dependencies are satisfied." ON)
 option(SIMUTIL_SHARED "If off, simUtil SDK libraries are built statically; if on, simUtil SDK libraries are built dynamically" ON)
+option(BUILD_SIMQT "If off, simQt SDK libraries are not compiled; if on, library is built if dependencies are satisfied." ON)
 option(SIMQT_SHARED "If off, simQt SDK libraries are built statically; if on, simQt SDK libraries are built dynamically" ON)
 # Install the SDK libraries, shared or static
 set(INSTALL_SIMDIS_SDK_LIBRARIES ON)
@@ -53,6 +57,7 @@ set(INSTALL_SIMDIS_SDK_LIBRARIES ON)
 if(NOT MSVC AND NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." FORCE)
 endif()
+set(CMAKE_BUILD_TYPE "Release")
 
 # Allow CMake to use folders in MSVC; turn off when using Express versions
 option(ENABLE_FOLDERS "Enable folder grouping of projects in IDEs." ON)
@@ -99,9 +104,11 @@ if(WIN32)
     endif()
 else()
     # Export global symbols to combat .so dynamic_cast<> issues
-    unique_append_string(CMAKE_EXE_LINKER_FLAGS "-Wl,-E")
-    unique_append_string(CMAKE_SHARED_LINKER_FLAGS "-Wl,-E")
-    unique_append_string(CMAKE_MODULE_LINKER_FLAGS "-Wl,-E")
+    if(NOT APPLE)
+        unique_append_string(CMAKE_EXE_LINKER_FLAGS "-Wl,-E")
+        unique_append_string(CMAKE_SHARED_LINKER_FLAGS "-Wl,-E")
+        unique_append_string(CMAKE_MODULE_LINKER_FLAGS "-Wl,-E")
+    endif()
     set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} CACHE STRING "Flags used during linking executables")
     set(CMAKE_SHARED_LINKER_FLAGS ${CMAKE_SHARED_LINKER_FLAGS} CACHE STRING "Flags used during linking shared libraries and DLLs")
     set(CMAKE_MODULE_LINKER_FLAGS ${CMAKE_MODULE_LINKER_FLAGS} CACHE STRING "Flags used during linking modules")
@@ -231,7 +238,7 @@ endif()
 
 # SWIG module requires Python3.  FindPython3.cmake is first distributed in CMake 3.12
 if(NOT CMAKE_VERSION VERSION_LESS "3.12")
-    option(BUILD_SDK_SWIG "Build SIMDIS SDK SWIG module" OFF)
+    option(BUILD_SDK_SWIG "Build SIMDIS SDK SWIG module" ON)
     if(BUILD_SDK_SWIG)
         # Include SWIG for Python simCore module
         include(ImportSWIG)
