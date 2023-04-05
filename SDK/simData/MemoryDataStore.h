@@ -48,6 +48,8 @@ class SDKDATA_EXPORT MemoryDataStore : public DataStore
 public:
   MemoryDataStore();
   explicit MemoryDataStore(const ScenarioProperties &properties);
+  MemoryDataStore(const MemoryDataStore& rhs) = delete;
+  MemoryDataStore& operator=(const MemoryDataStore& rhs) = delete;
 
   virtual ~MemoryDataStore();
 
@@ -94,12 +96,8 @@ public:
   /** Removes a range of data from startTime up to but not including the endTime */
   virtual int flush(ObjectId id, FlushScope scope, FlushFields fields, double startTime, double endTime);
 
-  /**
-  * clear out the data store of all scenario specific data, including all entities and category data names.
-  * Invoke onScenarioDelete() unless the argument invokeCallback is false. This is useful if you are going
-  * to clear() manually prior to destroying the data store, to avoid double callbacks.
-  */
-  virtual void clear(bool invokeCallback = true);
+  /** clear out the data store of all scenario specific data, including all entities and category data names. */
+  virtual void clear();
 
   /**@name Interpolation
    *@{
@@ -369,6 +367,9 @@ private:
   /// The Listener, if any, that got removed during the last callback
   ListenerList justRemoved_;
 
+  /// Adds the children of hostid of type inType to the ids list
+  void idListForHost_(ObjectId hostid, simData::ObjectType inType, IdList* ids) const;
+
 public:
   // Types for SIMDIS
 
@@ -632,13 +633,15 @@ private:
   };
 
 private:
+  /// Clean up memory
+  void clearMemory_();
   /// Updates all the platforms
   void updatePlatforms_(double time);
   /// Updates a target beam
   void updateTargetBeam_(ObjectId id, BeamEntry* beam, double time);
   /// Updates all the beams
   void updateBeams_(double time);
-  ///Gets the beam that corresponds to specified gate
+  /// Gets the beam that corresponds to specified gate
   BeamEntry* getBeamForGate_(google::protobuf::uint64 gateID);
   /// Updates a target gate
   void updateTargetGate_(GateEntry* gate, double time);
@@ -658,8 +661,10 @@ private:
   void updateProjectors_(double time);
   /// Updates all the LobGroups
   void updateLobGroups_(double time);
-  ///Updates all the CustomRenderings
+  /// Updates all the CustomRenderings
   void updateCustomRenderings_(double time);
+  /// Updates all category data
+  void updateCategoryData_(double time, ListenerList& listeners);
   /// Flushes an entity based on the given scope, fields and time ranges
   void flushEntity_(ObjectId id, simData::ObjectType type, FlushScope flushScope, FlushFields flushFields, double startTime, double endTime);
   /// Flushes an entity's data tables
@@ -698,6 +703,31 @@ private:
   CustomRenderings   customRenderings_;
   GenericDataMap     genericData_;  // Map to hold references for GenericData update slice contained by the DataEntry object with the associated id
   CategoryDataMap    categoryData_; // Map to hold references for CategoryData update slice contained by the DataEntry object with the associated id
+
+  /// To improve performance keep track of children entities by host
+  class HostChildCache;
+  /// Key by host id and child type
+  struct IdAndTypeKey {
+    ObjectId id;
+    simData::ObjectType type;
+    IdAndTypeKey(ObjectId inId, simData::ObjectType inType)
+      : id(inId),
+        type(inType)
+    {
+    }
+    bool operator<(const IdAndTypeKey& rhs) const
+    {
+      if (id < rhs.id)
+        return true;
+
+      if (id > rhs.id)
+        return false;
+
+      return type < rhs.type;
+    }
+  };
+  /// A secondary map to track childrend id by host id
+  std::multimap<IdAndTypeKey, ObjectId> hostToChildren_;
 
   // default prefs objects
   PlatformPrefs  defaultPlatformPrefs_;
