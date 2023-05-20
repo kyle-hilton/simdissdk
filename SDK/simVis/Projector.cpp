@@ -31,6 +31,7 @@
 #include "osgEarth/Horizon"
 #include "osgEarth/Shadowing"
 #include "osgEarth/NodeUtils"
+#include "osgEarth/ObjectIndex"
 #include "osgEarth/CameraUtils"
 #include "osgEarth/TerrainEngineNode"
 #include "osgEarth/LogarithmicDepthBuffer"
@@ -308,11 +309,7 @@ ProjectorNode::ProjectorNode(const simData::ProjectorProperties& props, simVis::
   lastProps_(props),
   host_(host),
   hostLocator_(hostLocator),
-  hasLastUpdate_(false),
-  hasLastPrefs_(false),
-  projectorTextureImpl_(new ProjectorTextureImpl()),
-  graphics_(nullptr),
-  stateDirty_(false)
+  projectorTextureImpl_(new ProjectorTextureImpl())
 {
   init_();
 }
@@ -348,8 +345,11 @@ void ProjectorNode::init_()
 
   // Create matrix transform node that houses graphics frustum and set the node mask to off
   graphics_ = new osg::MatrixTransform();
-  addChild(graphics_);
+  addChild(graphics_.get());
   graphics_->setNodeMask(DISPLAY_MASK_NONE);
+
+  // Add a tag for picking
+  objectIndexTag_ = osgEarth::Registry::objectIndex()->tagNode(this, this);
 
   // create the uniforms that will control the texture projection:
   projectorActive_        = new osg::Uniform(osg::Uniform::BOOL,       "projectorActive");
@@ -664,6 +664,46 @@ void ProjectorNode::updateOverrideColor_(const simData::ProjectorPrefs& prefs)
   useColorOverrideUniform_->set(prefs.commonprefs().useoverridecolor());
 }
 
+int ProjectorNode::calculatePerspectiveComponents_(double& vfov, double& aspectRatio) const
+{
+  if (!hasLastUpdate_)
+    return 1;
+
+  double dataVFov = getVFOV();
+  double dataHFov = (lastUpdate_.has_hfov() ? lastUpdate_.hfov() * simCore::RAD2DEG : -1);
+
+  // There are 3 possibilities:
+  // 1) Both FOVs have valid definition. Calculate the aspect ratio from them
+  // 2) One FOV has a valid definition. Calculate the other FOV from the image's aspect ratio
+  // 3) Neither FOV has a valid definition. Error
+
+  if (dataVFov > 0 && dataHFov > 0)
+  {
+    vfov = dataVFov;
+    aspectRatio = dataHFov / dataVFov;
+    return 0;
+  }
+  else if (dataVFov > 0)
+  {
+    vfov = dataVFov;
+    if (texture_->getImage()->s() > 0 && texture_->getImage()->t() > 0)
+      aspectRatio = static_cast<double>(texture_->getImage()->s()) / texture_->getImage()->t();
+    else
+      aspectRatio = 1.0;
+    return 0;
+  }
+  else if (dataHFov > 0 && texture_->getImage()->s() > 0 && texture_->getImage()->t() > 0)
+  {
+    aspectRatio = static_cast<double>(texture_->getImage()->s()) / texture_->getImage()->t();
+    vfov = 1 / (aspectRatio * dataHFov);
+    return 0;
+  }
+
+  vfov = DEFAULT_PROJECTOR_FOV_IN_DEG;
+  aspectRatio = 1.0;
+  return 1;
+}
+
 bool ProjectorNode::readVideoFile_(const std::string& filename)
 {
   osg::Node* result = nullptr;
@@ -787,19 +827,14 @@ void ProjectorNode::syncWithLocator()
   // establish the view matrix:
   osg::Matrixd locatorMat;
   hostLocator_->getLocatorMatrix(locatorMat);
-  osg::Matrixd viewMat_temp = osg::Matrixd::inverse(locatorMat);
+
+  const osg::Matrixd& viewMat_temp = osg::Matrixd::inverse(locatorMat);
 
   // establish the projection matrix:
   osg::Matrixd projectionMat;
-  double vFov = getVFOV();
-  double hFov = (lastUpdate_.has_hfov() ? lastUpdate_.hfov() * simCore::RAD2DEG : -1);
-  double ar;
-  if (hFov <= 0)
-    ar = static_cast<double>(texture_->getImage()->s()) / texture_->getImage()->t();
-  else if (vFov > 0)
-    ar = hFov / vFov;
-  else
-    ar = 0;
+  double vFov = -1;
+  double ar = -1;
+  calculatePerspectiveComponents_(vFov, ar);
   float zfar = lastPrefs_.maxdrawrange();
   if (zfar == 0.0) zfar = 1e6;
   projectionMat.makePerspective(vFov, ar, 10.0, zfar);
@@ -808,7 +843,7 @@ void ProjectorNode::syncWithLocator()
   // which means the projector will point straight down by default (since the view vector
   // is -Z in view space). We want the projector to point along the entity vector, so
   // we create a view matrix that rotates the view to point along the +Y axis.
-  const osg::Matrix& rotateUp90Mat = osg::Matrix::rotate(-osg::PI_2, osg::Vec3d(1.0, 0.0, 0.0));
+  const osg::Matrixd& rotateUp90Mat = osg::Matrixd::rotate(-osg::PI_2, osg::Vec3d(1.0, 0.0, 0.0));
   viewMat_ = viewMat_temp * rotateUp90Mat;
 
   // flip the image if it's upside down
@@ -837,35 +872,6 @@ void ProjectorNode::syncWithLocator()
   texProjPosUniform_->set(osg::Vec3f(eye));
   texProjDirUniform_->set(osg::Vec3f(cen-eye));
 
-  // determine the best available position for the projector
-  double eciRefTime = 0.;
-  double time = 0.;
-  simCore::Vec3 hostPos;
-  // obtain current time and eci ref time from host
-  if (hostLocator_.valid())
-  {
-    const Locator* loc = hostLocator_.get();
-    eciRefTime = loc->getEciRefTime();
-    time = loc->getTime();
-  }
-  // if ellipsoid intersection can be calculated, use that result as the projector position
-  osg::Vec3d ellipsoidIntersection;
-  if (calculator_->intersectLine(eye, cen, ellipsoidIntersection))
-  {
-    const simCore::Vec3& intersection = convertToSim(ellipsoidIntersection);
-    const simCore::Coordinate projPosition(simCore::COORD_SYS_ECEF, intersection);
-    getLocator()->setCoordinate(projPosition, time, eciRefTime);
-  }
-  else
-  {
-    // default to "Null Island" if ellipsoid intersection is not calculable; but use host position if it is available
-    simCore::Vec3 hostPosEcef(simCore::EARTH_RADIUS, 0., 0.);
-    if (hostLocator_.valid())
-      hostLocator_->getLocatorPosition(&hostPosEcef);
-    const simCore::Coordinate projPosition(simCore::COORD_SYS_ECEF, hostPosEcef);
-    getLocator()->setCoordinate(projPosition, time, eciRefTime);
-  }
-
   // update the shadow camera
   if (shadowCam_.valid())
   {
@@ -874,7 +880,39 @@ void ProjectorNode::syncWithLocator()
   }
 
   // update the frustum geometry
-  makeFrustum(projectionMat, viewMat_, graphics_);
+  makeFrustum(projectionMat, viewMat_, graphics_.get());
+
+  // determine the best available position for the projector
+  double eciRefTime = 0.;
+  double time = 0.;
+  // obtain current time and eci ref time from host
+  if (hostLocator_.valid())
+  {
+    const Locator* loc = hostLocator_.get();
+    eciRefTime = loc->getEciRefTime();
+    time = loc->getTime();
+  }
+
+  const osg::Vec3d& hostPosEcef = locatorMat.getTrans();
+  simCore::Vec3 hostPosLla;
+  if (0 == simCore::CoordinateConverter::convertEcefToGeodeticPos(convertToSim(hostPosEcef), hostPosLla))
+  {
+    // extend the projector vector at least as far as the earth surface to guarantee an intersection
+    const osg::Vec3d& vector = osg::Vec3d(cen - eye) * 2.0 * hostPosLla.alt();
+    const osg::Vec3d& endpoint = eye + vector;
+    osg::Vec3d ellipsoidIntersection;
+    if (calculateEarthIntersection(hostPosLla.lat(), eye, endpoint, ellipsoidIntersection))
+    {
+      // if ellipsoid intersection can be calculated, use that result as the projector position
+      const simCore::Vec3& intersection = convertToSim(ellipsoidIntersection);
+      const simCore::Coordinate projPosition(simCore::COORD_SYS_ECEF, intersection);
+      getLocator()->setCoordinate(projPosition, time, eciRefTime);
+      return;
+    }
+  }
+  // else, use host position
+  const simCore::Coordinate projPosition(simCore::COORD_SYS_ECEF, convertToSim(hostPosEcef));
+  getLocator()->setCoordinate(projPosition, time, eciRefTime);
 }
 
 bool ProjectorNode::isActive() const
@@ -1030,8 +1068,7 @@ osgEarth::MapNode* ProjectorNode::getMapNode()
 
 unsigned int ProjectorNode::objectIndexTag() const
 {
-  // Not supported for projectors
-  return 0;
+  return objectIndexTag_;
 }
 
 void ProjectorNode::setCalculator(std::shared_ptr<osgEarth::Util::EllipsoidIntersector> calculator)
