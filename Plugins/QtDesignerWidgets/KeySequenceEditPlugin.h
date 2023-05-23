@@ -20,28 +20,34 @@
  * disclose, or release this software.
  *
  */
+#ifndef KEYSEQUENCEEDITPLUGIN_H
+#define KEYSEQUENCEEDITPLUGIN_H
 
-#ifndef SIMCORE_SCOPED_LAMBDA_H
-#define SIMCORE_SCOPED_LAMBDA_H
+#include <QDesignerCustomWidgetInterface>
 
-#include <functional>
-
-namespace simCore
+// Wrapper class for the KeySequenceEdit to provide QDesignerCustomWidgetInterface
+class KeySequenceEditPlugin : public QObject, public QDesignerCustomWidgetInterface
 {
-  /** Scoped class that executes a lambda function on destruction. */
-  struct ScopedLambda
-  {
-    explicit ScopedLambda(const std::function<void()>& onDestroy)
-      : onDestroy_(onDestroy)
-    {
-    }
-    ~ScopedLambda()
-    {
-      onDestroy_();
-    }
+  Q_OBJECT;
+  Q_INTERFACES(QDesignerCustomWidgetInterface);
 
-    const std::function<void()> onDestroy_;
-  };
-}
+public:
+  explicit KeySequenceEditPlugin(QObject *parent = 0);
 
-#endif /* SIMCORE_SCOPED_LAMBDA_H */
+  bool isContainer() const;
+  bool isInitialized() const;
+  QIcon icon() const;
+  QString domXml() const;
+  QString group() const;
+  QString includeFile() const;
+  QString name() const;
+  QString toolTip() const;
+  QString whatsThis() const;
+  QWidget *createWidget(QWidget *parent);
+  void initialize(QDesignerFormEditorInterface *core);
+
+private:
+  bool initialized_ = false;
+};
+
+#endif /* KEYSEQUENCEEDITPLUGIN_H */
