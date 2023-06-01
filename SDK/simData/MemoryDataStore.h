@@ -678,6 +678,9 @@ private:
   /// Flushes an entity's data tables for the given time range; up to but not including endTime
   void flushDataTables_(ObjectId id, double startTime, double endTime);
 
+  /// Configure local listeners
+  void initCompositeListener_();
+
   /// Initialize the default prefs objects
   virtual void setDefaultPrefs(const PlatformPrefs& platformPrefs,
     const BeamPrefs& beamPrefs,
@@ -712,6 +715,9 @@ private:
 
   /// To improve performance keep track of children entities by host
   class HostChildCache;
+  /// To improve performance keep track of Original IDs
+  class OriginalIdCache;
+
   /// Key by host id and child type
   struct IdAndTypeKey {
     ObjectId id;
@@ -732,7 +738,7 @@ private:
       return type < rhs.type;
     }
   };
-  /// A secondary map to track childrend id by host id
+  /// A secondary map to track children id by host id
   std::multimap<IdAndTypeKey, ObjectId> hostToChildren_;
 
   // default prefs objects
@@ -763,6 +769,9 @@ private:
 
   /// Improves performance of by-name searches in the data store
   EntityNameCache* entityNameCache_;
+
+  /// Improve performance by caching the original Ids
+  std::shared_ptr<OriginalIdCache> originalIdCache_;
 
   /// Links together the TableManager::NewRowDataListener to our newUpdatesListener_
   std::shared_ptr<NewRowDataToNewUpdatesAdapter> newRowDataListener_;
