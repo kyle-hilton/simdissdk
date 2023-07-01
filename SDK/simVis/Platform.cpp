@@ -119,6 +119,10 @@ public:
       // When scaling by model size scale down the radius by a small amount -- 80% -- to reduce highlight size
       const double radius = (size == 0.0) ? VectorScaling::lineLength(platform_->getModel(), 0.8) : size;
       area->setRadius(radius);
+
+      simCore::Coordinate c;
+      platform_->getLocator()->getCoordinate(&c, simCore::COORD_SYS_LLA);
+      area->setScreenRotation(c.yaw());
     }
     return traverse(object, data);
   }
@@ -990,16 +994,17 @@ void PlatformNode::updateOrRemoveEphemerisVector_(bool prefsDraw, const simData:
 
 void PlatformNode::updateOrRemoveCircleHighlight_(bool prefsDraw, const simData::PlatformPrefs& prefs)
 {
-  bool followOri = prefs.hilightfolloworientation();
+  // pulsing circle shape never rotates with platform
+  const bool rotateWithPlatform = prefs.hilightfolloworientation() && prefs.circlehilightshape() != simData::CH_PULSING_CIRCLE;
   if (prefsDraw && prefs.drawcirclehilight())
   {
     if (!highlight_.valid())
     {
       highlight_ = new CompositeHighlightNode(prefs.circlehilightshape());
       highlight_->addUpdateCallback(new SetCircleRadiusCallback(this));
-      highlight_->setAutoRotate(!followOri);
+      highlight_->setAutoRotate(!rotateWithPlatform);
       // set the owner of highlight_
-      if (followOri)
+      if (rotateWithPlatform)
       {
         // add directly to model if following orientation
         if (prefs.circlehilightsize() == 0.0)
@@ -1023,11 +1028,12 @@ void PlatformNode::updateOrRemoveCircleHighlight_(bool prefsDraw, const simData:
     }
     else if (lastPrefsValid_)
     {
+      const bool lastRotateWithPlatform = lastPrefs_.hilightfolloworientation() && lastPrefs_.circlehilightshape() != simData::CH_PULSING_CIRCLE;
       // See if the owner of highlight needs to switch
-      if (PB_FIELD_CHANGED((&lastPrefs_), (&prefs), hilightfolloworientation))
+      if (rotateWithPlatform != lastRotateWithPlatform)
       {
-        // change owner if follow orientation was toggled
-        if (followOri)
+        // change owner if rotate was toggled
+        if (rotateWithPlatform)
         {
           // remove from inertial transforms
           if (fixedScaledInertialTransform_.valid())
@@ -1067,7 +1073,7 @@ void PlatformNode::updateOrRemoveCircleHighlight_(bool prefsDraw, const simData:
       else if (PB_FIELD_CHANGED((&lastPrefs_), (&prefs), circlehilightsize))
       {
         // change owner if size changed between 0 and non-zero
-        if (followOri)
+        if (rotateWithPlatform)
         {
           if (prefs.circlehilightsize() == 0.0 && lastPrefs_.circlehilightsize() != 0.0)
           {
@@ -1099,7 +1105,7 @@ void PlatformNode::updateOrRemoveCircleHighlight_(bool prefsDraw, const simData:
           }
         }
       }
-      highlight_->setAutoRotate(!followOri);
+      highlight_->setAutoRotate(!rotateWithPlatform);
       highlight_->setShape(prefs.circlehilightshape());
     }
 
@@ -1110,7 +1116,7 @@ void PlatformNode::updateOrRemoveCircleHighlight_(bool prefsDraw, const simData:
   }
   else if (highlight_.valid()) // remove if present
   {
-    if (followOri)
+    if (rotateWithPlatform)
     {
       if (prefs.circlehilightsize() == 0.0)
         model_->removeScaledChild(highlight_.get());
