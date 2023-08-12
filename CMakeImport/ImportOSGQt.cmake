@@ -1,6 +1,8 @@
 # Setup osgQt library
 # Setting the OSGQT_DIR environment variable will allow use of a custom built library
 
+# set(OSGQT_DIR "/SIMDIS_SDK/3rd/linux64_gcc-8.3/osgQt/3.6.5/")
+
 set(OSGQT_FOUND FALSE)
 
 # Cannot locate osgEarth without OSG due to requirement on knowing OSG version
@@ -19,6 +21,7 @@ initialize_ENV(OSG_DIR)
 initialize_ENV(OSGQT_DIR)
 set(INCLUDE_DIRS
     "/usr/include"
+    "/usr/local/include"
     ${OSGQT_DIR}/include
     $ENV{OSGQT_DIR}/include
     ${THIRD_DIR}/osgQt/${${LIBRARYNAME}_VERSION}/include
@@ -29,6 +32,7 @@ set(INCLUDE_DIRS
 
 set(LIB_DIRS
     "/usr/lib64"
+    "/usr/local/lib64"
     ${OSGQT_DIR}
     $ENV{OSGQT_DIR}
     ${THIRD_DIR}/osgQt/${${LIBRARYNAME}_VERSION}

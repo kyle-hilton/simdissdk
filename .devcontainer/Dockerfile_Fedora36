@@ -1,4 +1,4 @@
-FROM fedora:latest
+FROM fedora:37
 
 RUN yum update -y
 RUN yum install wget \

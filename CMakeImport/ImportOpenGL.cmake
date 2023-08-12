@@ -5,6 +5,8 @@ find_package(OpenGL REQUIRED)
 if(OPENGL_FOUND)
     add_library(VSI::GL UNKNOWN IMPORTED)
     add_library(VSI::GLU UNKNOWN IMPORTED)
+    message(STATUS "OpenGL Found: ${OPENGL_gl_LIBRARY}")
+    message(STATUS "OpenGL GLU Found: ${OPENGL_glu_LIBRARY}")
 
     # Windows returns "opengl32" and "glu32".  Rather than tack .lib on the end, just specify them, possibly more compatible
     if(WIN32)
