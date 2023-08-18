@@ -37,6 +37,7 @@
 
 namespace simCore
 {
+#ifdef USE_DEPRECATED_SIMDISSDK_API
   /// General exception class with error reporting.
   class Exception : public std::exception
   {
@@ -47,8 +48,9 @@ namespace simCore
     * @param[in ] file Prefix to the reason, usually supplied as __FILE__; describes the C++ module triggering the exception
     * @param[in ] reason A string providing additional information about the error.
     * @param[in ] line Line number on which the exception was thrown.
+    * @deprecated This class has been deprecated in favor of std::exception and its derived exceptions such as std::logic_error.
     */
-    Exception(const std::string& file = "", const std::string& reason = "None", int line = 0)
+    SDK_DEPRECATE(Exception(const std::string& file = "", const std::string& reason = "None", int line = 0), "Deprecated, use std::exception instead.")
       : std::exception(),
       err_(reason),
       rawReason_(reason),
@@ -118,6 +120,7 @@ namespace simCore
     }
 
   };
+#endif
 
 #define SAFETRYBEGIN try \
   {
