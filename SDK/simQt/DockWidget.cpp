@@ -26,8 +26,8 @@
 #include <QAction>
 #include <QPainter>
 #include <QApplication>
-#include <QDesktopWidget>
 #include <QMainWindow>
+#include <QScreen>
 #include <QTabBar>
 #include <QToolButton>
 #include <QLabel>
@@ -38,6 +38,10 @@
 #include "simQt/BoundSettings.h"
 #include "simQt/QtFormatting.h"
 #include "simQt/DockWidget.h"
+
+#if QT_VERSION < QT_VERSION_CHECK(5, 10, 0)
+#include <QDesktopWidget>
+#endif
 
 namespace simQt {
 
@@ -134,7 +138,7 @@ private:
 class DockWidget::DoubleClickFrame : public QFrame
 {
 public:
-  explicit DoubleClickFrame(DockWidget& dockWidget, QWidget* parent=nullptr, Qt::WindowFlags flags=0)
+  explicit DoubleClickFrame(DockWidget& dockWidget, QWidget* parent=nullptr, Qt::WindowFlags flags=Qt::WindowFlags())
     : QFrame(parent, flags),
       dockWidget_(dockWidget)
   {
@@ -172,7 +176,7 @@ private:
 class DockWidget::DoubleClickIcon : public QLabel
 {
 public:
-  DoubleClickIcon(DockWidget& dockWidget, QWidget* parent = nullptr, Qt::WindowFlags flags = 0)
+  DoubleClickIcon(DockWidget& dockWidget, QWidget* parent = nullptr, Qt::WindowFlags flags = Qt::WindowFlags())
     : QLabel(parent, flags),
     dockWidget_(dockWidget)
   {
@@ -319,6 +323,56 @@ private:
   QTabBar* tabBar_ = nullptr;
   QString prevTab_;
 };
+
+///////////////////////////////////////////////////////////////
+
+inline
+void recenterTo(simQt::DockWidget& dockWidget, const QWidget* parentWidget)
+{
+  if (parentWidget && parentWidget->isVisible())
+  {
+    const auto& centerPos = parentWidget->mapToGlobal(parentWidget->rect().center());
+    dockWidget.move(centerPos - dockWidget.rect().center());
+  }
+}
+
+inline
+bool pointOnScreen(const QPoint& point)
+{
+#if QT_VERSION < QT_VERSION_CHECK(5, 10, 0)
+  const auto& screens = QGuiApplication::screens();
+  for (const auto& screen : screens)
+  {
+    if (screen->availableGeometry().contains(point))
+      return true;
+  }
+  return false;
+#else
+  return QGuiApplication::screenAt(point);
+#endif
+}
+
+inline
+void ensureVisible(simQt::DockWidget& dockWidget, const QWidget* parentWidget)
+{
+  // Docked widgets will always be visible
+  if (!dockWidget.isFloating())
+    return;
+
+  // Dock widgets should always have a title; the no-title display is 1x1
+  auto* title = dockWidget.titleBarWidget();
+  if (!title)
+    return; // unexpected
+
+  const auto& titlePos = title->mapToGlobal(title->pos());
+  const QRect titleRect(titlePos, title->size());
+  // Each corner of the title should be on the screen
+  if (pointOnScreen(titleRect.topLeft()) && pointOnScreen(titleRect.topRight()) &&
+    pointOnScreen(titleRect.bottomLeft()) && pointOnScreen(titleRect.bottomRight()))
+    return;
+
+  recenterTo(dockWidget, parentWidget);
+}
 
 ///////////////////////////////////////////////////////////////
 
@@ -665,8 +719,14 @@ void DockWidget::maximize_()
   normalGeometry_ = geometry();
 
   // Set the window dimensions manually to maximize the available geometry
+#if QT_VERSION < QT_VERSION_CHECK(5, 10, 0)
   QDesktopWidget dw;
   setGeometry(dw.availableGeometry(this));
+#else
+  auto* currentScreen = screen();
+  if (currentScreen)
+    setGeometry(currentScreen->availableGeometry());
+#endif
 
   // Finally update the state of the enable/disable/visibility
   updateTitleBar_();
@@ -961,8 +1021,13 @@ QAction* DockWidget::isDockableAction() const
 
 bool DockWidget::isMaximized_() const
 {
+#if QT_VERSION < QT_VERSION_CHECK(5, 10, 0)
   QDesktopWidget dw;
   return geometry() == dw.availableGeometry(this);
+#else
+  auto* currentScreen = screen();
+  return currentScreen && geometry() == currentScreen->availableGeometry();
+#endif
 }
 
 bool DockWidget::searchEnabled() const
@@ -1171,12 +1236,19 @@ void DockWidget::showEvent(QShowEvent* evt)
     return;
   setFocus();
   activateWindow();  // Covers highlighting when floating
+
+  // Make sure the dock widget is visible. Recenter it if needed
+  QWidget* parentWidget = dynamic_cast<QWidget*>(parent());
+  if (!parentWidget)
+    parentWidget = mainWindow_;
+  ensureVisible(*this, parentWidget);
 }
 
 void DockWidget::show()
 {
   // The following may or may not call showEvent() based on current state
   QDockWidget::show();
+
   // Only set focus if our title bar widget is used
   if (extraFeatures_.testFlag(DockNoTitleStylingHint) || titleBarWidget() == noTitleBar_)
     return;
@@ -1241,7 +1313,18 @@ void DockWidget::restoreFloating_(const QByteArray& geometryBytes)
     if (features().testFlag(DockWidgetFloatable) || globalNoDocking)
     {
       setFloating(true);
-      restoreGeometry(geometryBytes);
+      if (!restoreGeometry(geometryBytes))
+      {
+        // Qt on Linux RHEL8+ (esp Wayland) with multi-screen has problems with positioning widgets such
+        // that the dock widget defaults to (0,0) global instead of near the parent window. This attempts to
+        // fix the position so that it stays on the same screen as the main window in these cases. Attempt to
+        // fix SIM-16068 and SIMDIS-3901. This happens on Qt 5.9 and 5.15 both.
+        QWidget* parentWidget = dynamic_cast<QWidget*>(parent());
+        if (!parentWidget)
+          parentWidget = mainWindow_;
+        recenterTo(*this, parentWidget);
+      }
+
     }
     else
     {
