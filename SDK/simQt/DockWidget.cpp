@@ -26,6 +26,7 @@
 #include <QAction>
 #include <QPainter>
 #include <QApplication>
+#include <QDesktopWidget>
 #include <QMainWindow>
 #include <QScreen>
 #include <QTabBar>
@@ -329,11 +330,37 @@ private:
 inline
 void recenterTo(simQt::DockWidget& dockWidget, const QWidget* parentWidget)
 {
+#if QT_VERSION < QT_VERSION_CHECK(5, 10, 0)
+  const auto& screenGeometry = QApplication::desktop()->availableGeometry(parentWidget);
+#else
+  const auto& screenGeometry = parentWidget->screen()->availableGeometry();
+#endif
+
+  bool posFound = false;
+  QPoint newPos;
   if (parentWidget && parentWidget->isVisible())
   {
+    // make sure the parent center is visible in the current screen geometry
     const auto& centerPos = parentWidget->mapToGlobal(parentWidget->rect().center());
-    dockWidget.move(centerPos - dockWidget.rect().center());
+    if (screenGeometry.contains(centerPos))
+    {
+      newPos = centerPos - dockWidget.rect().center();
+      posFound = true;
+    }
   }
+  // could not center on parent, just center on the parent's screen
+  if (!posFound)
+    newPos = screenGeometry.center() - dockWidget.rect().center();
+
+  // make sure top of widget is below top of screen
+  if (newPos.y() < screenGeometry.top())
+    newPos.setY(screenGeometry.top());
+
+  // add padding for bottom check to ensure titlebar is visible if below bottom of screen
+  if (newPos.y() > screenGeometry.bottom() - 30)
+    newPos.setY(screenGeometry.bottom() - 30);
+
+  dockWidget.move(newPos);
 }
 
 inline
