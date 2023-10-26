@@ -334,13 +334,6 @@ if(TARGET simVis)
     target_link_libraries(simQt PRIVATE VSI::GL)
 endif()
 
-# Part of simQt relies on std::filesystem
-find_package(Filesystem QUIET)
-if(TARGET std::filesystem)
-    target_link_libraries(simQt PRIVATE std::filesystem)
-    target_compile_definitions(simQt PRIVATE HAVE_STD_FILESYSTEM)
-endif()
-
 # Link against OpenGL if OSGQT is found to support simQt::ViewWidget
 target_link_libraries(simQt PUBLIC simCore simNotify)
 if(TARGET OSGQT)
@@ -391,9 +384,6 @@ if(INSTALL_SIMDIS_SDK_LIBRARIES)
             set(SIMQT_DEPENDS "${SIMQT_DEPENDS}\nfind_dependency(${TGT})")
         endif()
     endforeach()
-    if(TARGET std::filesystem)
-        set(SIMQT_DEPENDS "${SIMQT_DEPENDS}\nfind_dependency(Filesystem)")
-    endif()
     configure_file(simQtConfig.cmake.in simQtConfig.cmake @ONLY)
 
     vsi_install_export(simQt ${SIMDIS_SDK_VERSION_STRING} AnyNewerVersion)

@@ -51,6 +51,8 @@ namespace simQt {
 static const QString DOCKABLE_SETTING = "DockWidgetDockable";
 /** QSettings key for geometry, to restore geometry before main window manages the dock widget */
 static const QString DOCK_WIDGET_GEOMETRY = "DockWidgetGeometry";
+/** QSettings key for un-maximized geometry, so the widget can restore to the last known un-maximized state if it is maximized */
+static const QString DOCK_WIDGET_UNMAX_GEOMETRY = "DockWidgetUnmaximizedGeometry";
 /** Meta data for the dockable persistent setting */
 static const simQt::Settings::MetaData DOCKABLE_METADATA = simQt::Settings::MetaData::makeBoolean(
   true, QObject::tr("Toggles whether the window can be docked into the main window or not"),
@@ -881,6 +883,11 @@ void DockWidget::closeEvent(QCloseEvent* event)
   Q_EMIT(closedGui());
 }
 
+void DockWidget::setDefaultSize(const QSize& defaultSize)
+{
+  defaultSize_ = defaultSize;
+}
+
 void DockWidget::setWidget(QWidget* widget)
 {
   // Deal with settings -- restore the is-dockable setting
@@ -1267,18 +1274,30 @@ void DockWidget::loadSettings_()
 
   // Pull out the default geometry
   QVariant widgetGeometry;
+  QVariant normalGeometry;
   if (settings_)
+  {
     widgetGeometry = settings_->value(path_() + DOCK_WIDGET_GEOMETRY, simQt::Settings::MetaData(simQt::Settings::SIZE, QVariant(), "", simQt::Settings::PRIVATE));
+    normalGeometry = settings_->value(path_() + DOCK_WIDGET_UNMAX_GEOMETRY, simQt::Settings::MetaData(simQt::Settings::SIZE, QVariant(), "", simQt::Settings::PRIVATE));
+  }
   else
   {
     QSettings settings;
     widgetGeometry = settings.value(path_() + DOCK_WIDGET_GEOMETRY);
+    normalGeometry = settings.value(path_() + DOCK_WIDGET_UNMAX_GEOMETRY);
   }
 
   // Initialize the bound setting for disable-all-docking
   applyGlobalSettings_();
 
-  normalGeometry_ = geometry();
+  // initialize normal geometry to the setting if it's valid
+  if (normalGeometry.isValid())
+    normalGeometry_ = normalGeometry.toRect();
+
+  // if the normal geometry isn't valid, just use current geometry
+  if (!normalGeometry_.isValid())
+    normalGeometry_ = geometry();
+
   restoreFloating_(widgetGeometry.toByteArray());
 }
 
@@ -1307,6 +1326,12 @@ void DockWidget::restoreFloating_(const QByteArray& geometryBytes)
       setFloating(true);
       if (!restoreGeometry(geometryBytes))
       {
+        // if restoreGeometry failed, use the default size if it is valid
+        if (!defaultSize_.isEmpty())
+          resize(defaultSize_);
+        else // otherwise, resize to the sizeHint, in case the initial resize hasn't happened yet
+          resize(sizeHint());
+
         // Qt on Linux RHEL8+ (esp Wayland) with multi-screen has problems with positioning widgets such
         // that the dock widget defaults to (0,0) global instead of near the parent window. This attempts to
         // fix the position so that it stays on the same screen as the main window in these cases. Attempt to
@@ -1349,12 +1374,14 @@ void DockWidget::saveSettings_()
     settings_->saveWidget(QDockWidget::widget());
     settings_->setValue(path_() + DOCKABLE_SETTING, dockableAction_->isChecked(), DOCKABLE_METADATA);
     settings_->setValue(path_() + DOCK_WIDGET_GEOMETRY, saveGeometry(), simQt::Settings::MetaData(simQt::Settings::SIZE, QVariant(), "", simQt::Settings::PRIVATE));
+    settings_->setValue(path_() + DOCK_WIDGET_UNMAX_GEOMETRY, normalGeometry_, simQt::Settings::MetaData(simQt::Settings::SIZE, QVariant(), "", simQt::Settings::PRIVATE));
   }
   else
   {
     // Save geometry since we can't save the widget (no settings_ pointer)
     QSettings settings;
     settings.setValue(path_() + DOCK_WIDGET_GEOMETRY, saveGeometry());
+    settings.setValue(path_() + DOCK_WIDGET_UNMAX_GEOMETRY, normalGeometry_);
   }
 }
 
