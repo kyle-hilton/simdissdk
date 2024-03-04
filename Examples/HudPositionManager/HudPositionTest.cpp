@@ -76,7 +76,7 @@ static std::string s_help =
   "c : Cycle classification string and color\n"
   "e : Toggle HUD Editor mode\n"
   "r : Reset all to default positions\n"
-  "w : Toggle Wind Vane on Compass\n"
+  "W : Toggle Wind Vane on Compass\n"
   "z : Cycle wind angle and speed values\n"
   ;
 
@@ -114,7 +114,7 @@ struct ControlPanel : public simExamples::SimExamplesGui
     ImGui::Text("c : Cycle classification string and color");
     ImGui::Text("e : Toggle HUD Editor mode");
     ImGui::Text("r : Reset all to default positions");
-    ImGui::Text("w : Toggle Wind Vane on Compass");
+    ImGui::Text("W : Toggle Wind Vane on Compass");
     ImGui::Text("z : Cycle wind angle and speed values");
 
     auto& io = ImGui::GetIO();
@@ -175,7 +175,7 @@ struct ControlPanel : public simExamples::SimExamplesGui
       case 'r':
         hudEditor_.resetAllPositions();
         break;
-      case 'w':
+      case 'W':
         if (compass_.valid())
           compass_->setWindVaneVisible(!compass_->isWindVaneVisible());
         break;
@@ -331,7 +331,7 @@ struct MenuHandler : public osgGA::GUIEventHandler
       handled = true;
       break;
 
-    case 'w':
+    case 'W':
       if (compass_.valid())
       {
         compass_->setWindVaneVisible(!compass_->isWindVaneVisible());
@@ -510,7 +510,7 @@ int main(int argc, char** argv)
   // Demonstrate the view-drawing service.  This is used to create new inset views with the mouse.
   simVis::View* mainView = viewer->getMainView();
   // set an initial viewpoint
-  mainView->lookAt(45, 0, 0, 0, -89, 12e6);
+  mainView->lookAt(45, 0, 0, 0, -89, 7e6);
 
   // Create a "Super HUD" on top of all other views and insets
   simVis::View* superHUD = new simVis::View();
