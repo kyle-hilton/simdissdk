@@ -23,162 +23,173 @@
 #ifndef SIMCORE_CALC_GEOMETRY_H
 #define SIMCORE_CALC_GEOMETRY_H
 
+#include <optional>
 #include <vector>
 #include "simCore/Common/Common.h"
-#include "simCore/Calc/CoordinateSystem.h"
 #include "simCore/Calc/Vec3.h"
 
 namespace simCore
 {
-  class Coordinate;
 
-  /// Vector of simCore::Vec3
-  typedef std::vector<Vec3> Vec3String;
+/// Vector of simCore::Vec3
+typedef std::vector<Vec3> Vec3String;
 
-  /// Geometric plane in 3D space.
-  class SDKCORE_EXPORT Plane
-  {
-  public:
-    /**
-     * Construct a new 3D plane from 3 points. The plane's normal vector will
-     * be (p2-p1) X (p3-p2), where X denotes a the cross product. A point on the
-     * same side of the plane as the positive normal vector is considered to be
-     * "above" or "inside" the plane and will yield a positive "distance" from
-     * the plane's surface.
-     *
-     * @param[in ] p1 First point
-     * @param[in ] p2 Second point
-     * @param[in ] p3 Third point
-     */
-    Plane(const Vec3& p1, const Vec3& p2, const Vec3& p3);
+/** A triangle is defined by three points in space. */
+struct Triangle
+{
+  simCore::Vec3 a;
+  simCore::Vec3 b;
+  simCore::Vec3 c;
+};
 
-    /// copy ctor
-    Plane(const Plane& rhs);
+/** A ray is defined by a 3-D origin and an orientation. */
+struct Ray
+{
+  simCore::Vec3 origin;
+  simCore::Vec3 direction;
+};
 
-    /// dtor
-    virtual ~Plane() { }
+/**
+ * Geometric plane in 3D space. Planes are defined by the formula:
+ *   ax + by + cz + d = 0
+ * The plane is defined by values a, b, c, and d.
+ */
+class SDKCORE_EXPORT Plane
+{
+public:
+  /** Construct a plane with a normal (0,0,1) with d of 0 (i.e. the X/Y plane intersecting origin) */
+  Plane();
 
-    /**
-     * Shortest distance from a point to the plane. A positive number means
-     * the point is "above" or "inside" the plane; zero means the point lies exactly
-     * on the plane; negative means the point is "below" or "outside" the plane.
-     * @param[in ] point Point to test.
-     */
-    double distance(const Vec3& point) const;
+  /**
+   * Construct a new 3D plane from 3 points. The plane's normal vector will
+   * be (p2-p1) X (p3-p2), where X denotes a the cross product. A point on the
+   * same side of the plane as the positive normal vector is considered to be
+   * "above" or "inside" the plane and will yield a positive "distance" from
+   * the plane's surface.
+   *
+   * @param[in ] p1 First point
+   * @param[in ] p2 Second point
+   * @param[in ] p3 Third point
+   */
+  Plane(const Vec3& p1, const Vec3& p2, const Vec3& p3);
 
-  protected:
-    /** Vector representing the plane */
-    double v_[4];
-  };
+  /**
+   * Construct a new 3D plane from an orientation vector and distance. This is
+   * equivalent to providing the plane formula, where abc.x = a, abc.y = b,
+   * abc.z = c, and d = d, where the plane is defined as:
+   *   ax + by + cz + d = 0
+   * @param abc Plane formula values a, b, and c, in the formula above. Represents
+   *   the plane's normal vector.
+   * @param d Distance or d value in the formula above
+   */
+  Plane(const Vec3& abc, double d);
 
-  /// Collection of 3D planes acting as a (possibly open) convex bounding volume.
-  /// The polytope is said to "contain" a point if that point lies "above"
-  /// all planes comprising the polytope. An empty polytope (zero planes)
-  /// contains all points.
-  class SDKCORE_EXPORT Polytope
-  {
-  public:
-    /** Construct a new empty polytope */
-    Polytope();
+  /**
+   * Shortest distance from a point to the plane. A positive number means
+   * the point is "above" or "inside" the plane; zero means the point lies exactly
+   * on the plane; negative means the point is "below" or "outside" the plane.
+   * @param[in ] point Point to test.
+   * @return Distance between point and plane
+   */
+  double distance(const Vec3& point) const;
 
-    /// copy ctor
-    Polytope(const Polytope& rhs);
+  /** Returns the unit vector, or normalized orientation of plane (plane's normal vector); (a,b,c) */
+  simCore::Vec3 normal() const;
+  /** Returns the distance from 0,0,0 to the closest point on plane's surface */
+  double d() const;
 
-    /// dtor
-    virtual ~Polytope() { }
+private:
+  /** Vector representing the plane. Elements 0 1 2 represent a,b,c and are normalized. */
+  double v_[4] = { 0., 0., 0., 0. };
+};
 
-    /**
-     * Adds a bounding plane to the polytope. The "inside" of the plane
-     * is the side with the positive normal vector.
-     * @param[in ] plane Bounding plane to add
-     */
-    void addPlane(const Plane& plane);
+/// Collection of 3D planes acting as a (possibly open) convex bounding volume.
+/// The polytope is said to "contain" a point if that point lies "above"
+/// all planes comprising the polytope. An empty polytope (zero planes)
+/// contains all points.
+class SDKCORE_EXPORT Polytope
+{
+public:
+  /** Construct a new empty polytope */
+  Polytope();
 
-    /**
-     * True is the point is bounded by the polytope. An empty polytope (no
-     * planes) contains all points. A point is contained if it falls on the
-     * positive-normal side of all planes.
-     * @param[in ] point Point to test.
-     */
-    bool contains(const Vec3& point) const;
+  /// copy ctor
+  Polytope(const Polytope& rhs);
 
-    /** Resets the polytope by removing all planes. */
-    void clear();
+  /// dtor
+  virtual ~Polytope() { }
 
-  protected:
-    /** Vector of all planes that, together, represent the polytope */
-    std::vector<Plane> planes_;
-  };
+  /**
+   * Adds a bounding plane to the polytope. The "inside" of the plane
+   * is the side with the positive normal vector.
+   * @param[in ] plane Bounding plane to add
+   */
+  void addPlane(const Plane& plane);
 
-  /// Geographic, convex bounding region formed from a line string boundary.
-  /// Each pair of points forms a segment of the fence. If the last point in the
-  /// line string is the same as the first, the fence will bound a closed region.
-  /// A valid polygon must have its vertices specified in CCW order.
-  class SDKCORE_EXPORT GeoFence
-  {
-  public:
-    /**
-     * Constructs an empty fence. An empty fence contains everything.
-     */
-    GeoFence();
+  /**
+   * True is the point is bounded by the polytope. An empty polytope (no
+   * planes) contains all points. A point is contained if it falls on the
+   * positive-normal side of all planes.
+   * @param[in ] point Point to test.
+   */
+  bool contains(const Vec3& point) const;
 
-    /// copy ctor
-    GeoFence(const GeoFence& rhs);
+  /** Resets the polytope by removing all planes. */
+  void clear();
 
-    /**
-     * Construct a new geofence with the bounding coordinates.
-     *
-     * @param[in ] points Bounding points (i.e. "fence posts"). The fence will be
-     *                    "open" unless you repeat the start point as the end point.
-     *                    Each segment (consecutive point pairs) must be less than
-     *                    180 degrees apart, otherwise the fence will be invalid.
-     *                    The closed fence must be convex.
-     * @param[in ] cs     Coordinate system of [points], must be LLA or ECEF.
-     */
-    GeoFence(const Vec3String& points, const CoordinateSystem& cs);
+private:
+  /** Vector of all planes that, together, represent the polytope */
+  std::vector<Plane> planes_;
+};
 
-    /**
-     * Sets the boundary points of the fence.
-     *
-     * @param[in ] points Bounding points (i.e. "fence posts"). The fence will be
-     *                    "open" unless you repeat the start point as the end point.
-     *                    Each segment (consecutive point pairs) must be less than
-     *                    180 degrees apart, otherwise the fence will be invalid.
-     *                    The closed fence must be convex.
-     * @param[in ] cs     Coordinate system of [points], must be LLA or ECEF.
-     */
-    void set(const Vec3String& points, const CoordinateSystem& cs);
+/** Results of an intersection test between a ray and triangle */
+struct IntersectResultsRT
+{
+  // Barycentric coordinates of the intersection in the triangle
+  double u = 0.;
+  double v = 0.;
 
-    /** True if the fence is valid (forms a convex region, with at least 3 vertices) */
-    bool valid() const { return valid_; }
+  /** Intersection point is ray.origin + t * ray.direction */
+  double t = 0.;
 
-    /**
-     * True if the point is on the inside of the fence.
-     * @param[in ] ecef Point to test; must be ECEF.
-     */
-    bool contains(const Vec3& ecef) const;
+  /** True when the ray intersects the triangle. */
+  bool intersects = false;
+};
 
-    /**
-     * True if the fence contains the coordinate.
-     * @param[in ] coord Coord to test; must be LLA or ECEF, otherwise the method will return false
-     */
-    bool contains(const Coordinate& coord) const;
+/**
+ * Performs an intersection test of a ray against a triangle. Returns whether
+ * the ray intersects, the (u,v) of the intersection on the triangle, and the
+ * distance "t" along the ray where the triangle intersects. Winding of the
+ * triangle makes no difference. By default, this function returns a true
+ * intersection when the ray obliquely intersects with the exact edge of the
+ * triangle. The `inclusiveEdge` value can change that behavior.
+ * @param ray Describes the ray (origin and direction) to test against triangle.
+ * @param triangle Describes the 3-D triangle shape to test against ray.
+ * @param inclusiveEdges If true, a ray obliquely hitting the exact edge of the
+ *   triangle returns a hit on the triangle. If false, it does not. This is
+ *   helpful to try to distinguish between hits and misses e.g. on the corner
+ *   of a shape making up a hull.
+ * @return Intersection results, including barycentric coordinate of the hit if
+ *   an intersection occurred, and the distance along the ray for the intersection.
+ */
+SDKCORE_EXPORT IntersectResultsRT rayIntersectsTriangle(const Ray& ray, const Triangle& triangle, bool inclusiveEdges);
 
-    /** dtor */
-    virtual ~GeoFence() { }
-
-  protected:
-
-    /** data points in the fence */
-    Vec3String points_;
-    /** Polytope representing the fence shape */
-    Polytope tope_;
-    /** True when the shape is valid */
-    bool valid_;
-
-    /// call this after set
-    bool verifyConvexity_(const Vec3String& v) const;
-  };
+/**
+ * Returns the intersection point along the ray where it intersects the plane. If the
+ * ray does not intersect the plane due to it being on a parallel plane, this returns
+ * an empty optional. Otherwise it returns a scale that is applied to the ray as to
+ * where it intersects the plane. A negative value means the ray points away from the
+ * plane, a positive value indicates the ray points into the plane, and a 0 values
+ * indicates the ray starts on the plane. The intersection point can be determined
+ * by calculating ray.origin + ray.direction * t, where we return the value t.
+ * @param ray Arbitrary ray in 3D space
+ * @param plane Arbitrary plane in 3D space
+ * @return "t" value such that ray.origin + ray.direction * t intersects the plane.
+ *   0 or positive value indicates intersection. Negative value indicates the
+ *   intersection occurs behind the ray's origin (in wrong direction). Empty value
+ *   indicates the ray is parallel to the plane.
+ */
+SDKCORE_EXPORT std::optional<double> rayIntersectsPlane(const simCore::Ray& ray, const simCore::Plane& plane);
 
 } // namespace simCore
 
