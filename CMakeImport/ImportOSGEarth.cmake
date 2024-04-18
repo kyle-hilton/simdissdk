@@ -37,6 +37,11 @@ message(STATUS "Found OsgEarth DBG: ${${LIBRARYNAME}_LIBRARY_DEBUG_NAME}")
 message(STATUS "Found OsgEarth REL: ${${LIBRARYNAME}_LIBRARY_RELEASE_NAME}")
 
 
+# MSVC requires -Zc:__cplusplus due to weejobs.h testing the value in header
+if(MSVC)
+    list(APPEND ${LIBRARYNAME}_COMPILE_OPTIONS "-Zc:__cplusplus")
+endif()
+
 if(NOT ${LIBRARYNAME}_LIBRARY_RELEASE_NAME)
     mark_as_advanced(CLEAR ${LIBRARYNAME}_LIBRARY_INCLUDE_PATH ${LIBRARYNAME}_LIBRARY_DEBUG_NAME ${LIBRARYNAME}_LIBRARY_RELEASE_NAME)
     return()
