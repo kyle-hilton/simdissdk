@@ -14,7 +14,7 @@
  *               Washington, D.C. 20375-5339
  *
  * License for source code is in accompanying LICENSE.txt file. If you did
- * not receive a LICENSE.txt with this code, email simdis@nrl.navy.mil.
+ * not receive a LICENSE.txt with this code, email simdis@us.navy.mil.
  *
  * The U.S. Government retains all rights to use, duplicate, distribute,
  * disclose, or release this software.
@@ -25,6 +25,7 @@
 
 #include <istream>
 #include <map>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -46,14 +47,20 @@ public:
   virtual ~CsvReader();
 
   /**
-   * Get the line number of the most recently read line. Line number is incremented
+   * Gets the line number of the most recently read line. Line number is incremented
    * during line reading and never reset, so if the std::istream& supplied during class
    * construction is modified externally to this class, this line number might not be correct.
    * @return line number of most recently read line
    */
   size_t lineNumber() const;
 
-  /** Set the char that denotes a comment line. Defaults to '#'. */
+ /**
+  * Gets the most recently read CSV line, maybe multiple text lines due to quoted carriage returns.
+  * @return the most recently read CSV line.
+  */
+  std::string lineText() const;
+
+  /** Sets the char that denotes a comment line. Defaults to '#'. */
   void setCommentChar(char commentChar);
 
   /** Sets the delimiter between tokens, typically comma */
@@ -66,13 +73,20 @@ public:
   void setQuoteChar(char quote);
 
   /**
-   * Read the next line of the stream into the given vector. Will always clear
+   * Sets whether to allow a line to transition to a comment midway through reading.
+   * If true, encountering a comment character in the middle of line will cause the rest of the line to be ignored.
+   * If false, a comment character mid-line will be treated like any other character and added to the current token.
+   */
+  void setAllowMidlineComments(bool allow);
+
+  /**
+   * Reads the next line of the stream into the given vector. Will always clear
    * the given vector. May skip completely empty lines, but will not skip lines
    * with only whitespace. Comment detection is supported and comment tokens outside
    * of quoted strings will be respected properly.
    * @param[out] tokens  Vector filled with tokens from the next line
-   * @param[in] skipEmptyLines  If true, will skip empty lines when reading. If
-   *    false, will break on empty lines and return 0 with an empty tokens vector.
+   * @param[in] skipEmptyLines  If true, will skip empty and commented-out lines when reading.
+   *    If false, will break on empty lines and return 0 with an empty tokens vector.
    * @return 0 on successful line read, 1 when the end of the file is reached
    */
   int readLine(std::vector<std::string>& tokens, bool skipEmptyLines = true);
@@ -82,13 +96,15 @@ public:
    * identically to readLine(), but trims leading and trailing whitespace from
    * each token before returning.
    * @param[out] tokens  Vector filled with tokens from the next line
-   * @param[in] skipEmptyLines  If true, will skip empty lines when reading. If
-   *    false, will break on empty lines and return 0 with an empty tokens vector.
+   * @param[in] skipEmptyLines  If true, will skip empty and commented-out lines when reading.
+   *    If false, will break on empty lines and return 0 with an empty tokens vector.
    * @return 0 on successful line read, 1 when the end of the file is reached
    */
   int readLineTrimmed(std::vector<std::string>& tokens, bool skipEmptyLines = true);
 
 private:
+  class BufferedReader;
+
   /** Consumes a single character from the input stream, returning empty on EOF/invalid */
   std::optional<char> readNext_();
   /**
@@ -106,12 +122,15 @@ private:
   /** Wrapper around readLineImpl_() that will run readLineImpl_() multiple times, to skip empty lines */
   int readLineSkippingEmptyLines_(std::vector<std::string>& tokens);
 
-  std::istream& stream_;
   char commentChar_ = '#';
   char delimiter_ = ',';
   char escape_ = '\\';
   char quote_ = '"';
+  bool allowMidlineComments_ = true;
   size_t lineNumber_ = 0;
+  std::string lineText_;
+  size_t linesFoundInRead_ = 1;
+  std::unique_ptr<BufferedReader> buffer_;
 };
 
 /** Convenience interface into a CsvReader that can read headers and reference fields by header name */

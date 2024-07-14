@@ -14,7 +14,7 @@
  *               Washington, D.C. 20375-5339
  *
  * License for source code is in accompanying LICENSE.txt file. If you did
- * not receive a LICENSE.txt with this code, email simdis@nrl.navy.mil.
+ * not receive a LICENSE.txt with this code, email simdis@us.navy.mil.
  *
  * The U.S. Government retains all rights to use, duplicate, distribute,
  * disclose, or release this software.
@@ -22,7 +22,6 @@
  */
 #include <QAction>
 #include <QDateTimeEdit>
-#include "simQt/ScopedSignalBlocker.h"
 #include "simQt/SegmentedSpinBox.h"
 #include "simQt/SegmentedTexts.h"
 #include "simQt/QtFormatting.h"
@@ -134,6 +133,11 @@ void SecondsContainer::setColorCode(bool value)
   widget_->setColorCode(value);
 }
 
+void SecondsContainer::setProcessEnterKey(bool process)
+{
+  widget_->setProcessEnterKey(process);
+}
+
 void SecondsContainer::setPrecision(unsigned int digits)
 {
   widget_->line()->setPrecision(digits);
@@ -230,6 +234,11 @@ bool MonthContainer::colorCode() const
 void MonthContainer::setColorCode(bool value)
 {
   colorCode_ = value;
+}
+
+void MonthContainer::setProcessEnterKey(bool process)
+{
+  widget_->setProcessEnterKey(process);
 }
 
 void MonthContainer::setPrecision(unsigned int digits)
@@ -330,6 +339,11 @@ void OrdinalContainer::setColorCode(bool value)
   widget_->setColorCode(value);
 }
 
+void OrdinalContainer::setProcessEnterKey(bool process)
+{
+  widget_->setProcessEnterKey(process);
+}
+
 void OrdinalContainer::setPrecision(unsigned int digits)
 {
   widget_->line()->setPrecision(digits);
@@ -426,6 +440,11 @@ bool MinutesContainer::colorCode() const
 void MinutesContainer::setColorCode(bool value)
 {
   widget_->setColorCode(value);
+}
+
+void MinutesContainer::setProcessEnterKey(bool process)
+{
+  widget_->setProcessEnterKey(process);
 }
 
 void MinutesContainer::setPrecision(unsigned int digits)
@@ -526,6 +545,11 @@ void HoursContainer::setColorCode(bool value)
   widget_->setColorCode(value);
 }
 
+void HoursContainer::setProcessEnterKey(bool process)
+{
+  widget_->setProcessEnterKey(process);
+}
+
 void HoursContainer::setPrecision(unsigned int digits)
 {
   widget_->line()->setPrecision(digits);
@@ -620,6 +644,11 @@ bool Iso8601Container::colorCode() const
 void Iso8601Container::setColorCode(bool value)
 {
   return widget_->setColorCode(value);
+}
+
+void Iso8601Container::setProcessEnterKey(bool process)
+{
+  widget_->setProcessEnterKey(process);
 }
 
 void Iso8601Container::setPrecision(unsigned int digits)

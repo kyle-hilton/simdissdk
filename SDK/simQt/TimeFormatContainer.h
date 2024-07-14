@@ -14,7 +14,7 @@
  *               Washington, D.C. 20375-5339
  *
  * License for source code is in accompanying LICENSE.txt file. If you did
- * not receive a LICENSE.txt with this code, email simdis@nrl.navy.mil.
+ * not receive a LICENSE.txt with this code, email simdis@us.navy.mil.
  *
  * The U.S. Government retains all rights to use, duplicate, distribute,
  * disclose, or release this software.
@@ -84,6 +84,9 @@ public:
   /// set the behavior of color change on error
   virtual void setColorCode(bool value) = 0;
 
+  /// If true process an Enter key to focus to the next child
+  virtual void setProcessEnterKey(bool process) = 0;
+
   /// Set the number of digits after the decimal point
   virtual void setPrecision(unsigned int digits) = 0;
   /// get the number of digits after the decimal point
@@ -142,6 +145,8 @@ public:
   virtual bool colorCode() const;
   /// set "change color on error"
   virtual void setColorCode(bool value);
+  /// If true process an Enter key to focus to the next child
+  virtual void setProcessEnterKey(bool process);
   /// Set the number of digits after the decimal point
   virtual void setPrecision(unsigned int digits);
   /// get the number of digits after the decimal point
@@ -190,6 +195,8 @@ public:
   virtual bool colorCode() const;
   /// set "change color on error"
   virtual void setColorCode(bool value);
+  /// If true process an Enter key to focus to the next child
+  virtual void setProcessEnterKey(bool process);
   /// Set the number of digits after the decimal point
   virtual void setPrecision(unsigned int digits);
   /// get the number of digits after the decimal point
@@ -239,6 +246,8 @@ public:
   virtual bool colorCode() const;
   /// set "change color on error"
   virtual void setColorCode(bool value);
+  /// If true process an Enter key to focus to the next child
+  virtual void setProcessEnterKey(bool process);
   /// Set the number of digits after the decimal point
   virtual void setPrecision(unsigned int digits);
   /// get the number of digits after the decimal point
@@ -287,6 +296,8 @@ public:
   virtual bool colorCode() const;
   /// set "change color on error"
   virtual void setColorCode(bool value);
+  /// If true process an Enter key to focus to the next child
+  virtual void setProcessEnterKey(bool process);
   /// Set the number of digits after the decimal point
   virtual void setPrecision(unsigned int digits);
   /// get the number of digits after the decimal point
@@ -335,6 +346,8 @@ public:
   virtual bool colorCode() const;
   /// set "change color on error"
   virtual void setColorCode(bool value);
+  /// If true process an Enter key to focus to the next child
+  virtual void setProcessEnterKey(bool process);
   /// Set the number of digits after the decimal point
   virtual void setPrecision(unsigned int digits);
   /// get the number of digits after the decimal point
@@ -383,6 +396,8 @@ public:
   virtual bool colorCode() const;
   /// set "change color on error"
   virtual void setColorCode(bool value);
+  /// If true process an Enter key to focus to the next child
+  virtual void setProcessEnterKey(bool process);
   /// Set the number of digits after the decimal point
   virtual void setPrecision(unsigned int digits);
   /// get the number of digits after the decimal point
