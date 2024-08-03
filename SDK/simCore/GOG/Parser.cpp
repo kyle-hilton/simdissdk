@@ -285,7 +285,6 @@ void Parser::parse(std::istream& input, const std::string& filename, std::vector
         textToken = simCore::StringUtils::substitute(textToken, "_", " ");
         textToken = simCore::StringUtils::substitute(textToken, "\\n", "\n");
         current.set(ShapeParameter::TEXT, textToken);
-        current.set(ShapeParameter::NAME, textToken);
         invalidShape = false;  // Required to allow processing of valid annotations after an invalid annotation
       }
       else
@@ -1530,7 +1529,7 @@ void Parser::parsePointBasedOptional_(const ParsedShape& parsed, const std::stri
   TessellationStyle style = TessellationStyle::NONE;
   // set style to none if tessellate is set to false
   if (!parsed.boolValue(ShapeParameter::TESSELLATE, false))
-    shape->setTesssellation(style);
+    shape->setTessellation(style);
   else
   {
     // if tessellate is set, default to RHUMBLINE unless LINEPROJECTION specifies otherwise
@@ -1540,7 +1539,7 @@ void Parser::parsePointBasedOptional_(const ParsedShape& parsed, const std::stri
       if (parsed.stringValue(ShapeParameter::LINEPROJECTION) == "greatcircle")
         style = TessellationStyle::GREAT_CIRCLE;
     }
-    shape->setTesssellation(style);
+    shape->setTessellation(style);
   }
 }
 
