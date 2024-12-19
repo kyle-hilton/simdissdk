@@ -161,6 +161,11 @@ else()
     target_compile_definitions(simData PUBLIC simData_LIB_EXPORT_STATIC)
 endif()
 
+if(EnTT_FOUND)
+    target_compile_definitions(simData PUBLIC HAVE_ENTT)
+    target_link_libraries(simData PUBLIC EnTT::EnTT)
+endif()
+
 if(WIN32)
     target_compile_options(simData PRIVATE -bigobj)
 endif()
